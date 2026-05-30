@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html>
+<head>
+    <title>Script Archive</title>
+</head>
 <body>
+    <h1>Script Archive</h1>
 
-<h1>Script Archive</h1>
+    <h2>core.js</h2>
+    <pre id="core-content">
+        <!-- The script will be loaded here automatically -->
+    </pre>
 
-<a href="core9.js">core9.js</a><br>
-<a href="Intercept">Intercept</a><br>
-<a href="Tablesort2">Tablesort2</a><br>
-
-</body>
-</html>
+    <script>
+        fetch('core.js')  // This is the relative path to your file
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('core-content').
