@@ -1,0 +1,198 @@
+// ==UserScript==
+// @name         [BZNCODE] Illyriad Army Landing Info
+// @namespace    http://bazoon.town
+// @version      1.0
+// @description  Adds functionality for tracking army landing info for siege/blockade
+// @author       Bazoon
+// @match        https://elgea.illyriad.co.uk/*
+// ==/UserScript==
+
+(function () {
+    'use strict';
+    var armyDivOld = null;
+    var holdFieldsetsA = null;
+    let observer;
+    var typeID = 0;
+    var occupyDataArray = [];
+
+    function getOccupyData(holdFieldSet) {
+        var td = holdFieldSet.querySelector('td');
+        var days = td.querySelector('select[name="holdDays"').options.selectedIndex;
+        var hours = td.querySelector('select[name="holdHours"').options.selectedIndex;
+        var mins = td.querySelector('select[name="holdMins"').options.selectedIndex;
+        var directionImage = holdFieldSet.querySelector('img[src*="cAttack_"]');
+        var armyName = null;
+        var legendElement = holdFieldSet.parentElement.previousElementSibling;
+        if (legendElement && legendElement.tagName === 'LEGEND') {
+            armyName = legendElement.querySelector('a').textContent.trim();
+        }
+        if (directionImage) {
+            var imageName = directionImage.getAttribute('src').split('/').pop();
+            var attackingDirection = imageName.replace(/^cAttack_([A-Za-z]+)\.png$/, '$1');
+            var directionMapping = {
+                'N': 'S',
+                'NE': 'SW',
+                'E': 'W',
+                'SE': 'NW',
+                'S': 'N',
+                'SW': 'NE',
+                'W': 'E',
+                'NW': 'SE'
+            };
+            var defendingDirection = directionMapping[attackingDirection] || attackingDirection;
+        }
+        var currentTownXPath = '/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[2]/div/span[1]';
+        var currentTownElement = document.evaluate(currentTownXPath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+        if (currentTownElement) {
+            var currentTown = currentTownElement.textContent.trim();
+        }
+        return [days, hours, mins, defendingDirection, armyName, currentTown];
+    }
+
+    const occObserver = new MutationObserver(() => {
+        const armyDiv = document.getElementById('Armies');
+        if (armyDiv) {
+            if(armyDiv !== armyDivOld) {
+                if(observer) {
+                    observer.disconnect();
+                    observer = null;
+                }
+                armyDivOld = armyDiv;
+                holdFieldsetsA = document.querySelectorAll('fieldset[name="holdFieldset"]');
+                observer = new MutationObserver(handleStyleChanges);
+                holdFieldsetsA.forEach(fieldset => {
+                    observer.observe(fieldset, { attributes: true, attributeFilter: ['style'] });
+                });
+            }
+        }
+    });
+
+    const urlObserver = new MutationObserver(() => {
+        const ordersRegex = /^https:\/\/elgea\.illyriad\.co\.uk\/#\/Military\/Orders\/.*/;
+        const movementsRegex = /^https:\/\/elgea\.illyriad\.co\.uk\/#\/Military\/Movements.*/;
+        if (ordersRegex.test(window.location.href)) {
+            occObserver.observe(document.documentElement, { childList: true, subtree: true });
+        } else {
+            occObserver.disconnect();
+        }
+        if (movementsRegex.test(window.location.href)) {
+            handleOutboundPage();
+        }
+    });
+
+    function handleOutboundPage() {
+        const infoDiv = document.querySelector('.info');
+        if (infoDiv) {
+            const legends = infoDiv.querySelectorAll('fieldset legend');
+            let outboundMovementsFieldset = null;
+            legends.forEach((legend) => {
+                if (legend.textContent.trim() === 'Your outbound military movements') {
+                    outboundMovementsFieldset = legend.closest('fieldset');
+                }
+            });
+            if (outboundMovementsFieldset) {
+                occupyDataArray = loadDataFromFile('occupyDataArray');
+                if (occupyDataArray) {
+                    var currentTownXPath = '/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[2]/div/span[1]';
+                    var currentTownElement = document.evaluate(currentTownXPath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                    var currentTown = currentTownElement ? currentTownElement.textContent.trim() : '';
+                    const matchingOccupyDataList = occupyDataArray.filter(data => data[5] === currentTown);
+                    matchingOccupyDataList.forEach((matchingOccupyData) => {
+                        const armyName = matchingOccupyData[4];
+                        setTimeout(() => {
+                            const existingTd = Array.from(outboundMovementsFieldset.querySelectorAll('tr.middle td.center a')).find((el) => el.textContent.trim() === armyName);
+                            if (existingTd) {
+                                const existingRow = existingTd.closest('tr.middle');
+                                if (!existingRow.dataset.tdAdded) {
+                                    const newTd = document.createElement('td');
+                                    newTd.setAttribute('style', 'text-align:center');
+                                    const occupyTimeString = `${matchingOccupyData[3]} ${matchingOccupyData[0]}d ${matchingOccupyData[1]}h ${matchingOccupyData[2]}m`;
+                                    newTd.textContent = occupyTimeString;
+                                    existingRow.querySelector('td.vsmall.center').after(newTd);
+                                    existingRow.dataset.tdAdded = true;
+                                }
+                            } else {
+                                const indexToRemove = occupyDataArray.indexOf(matchingOccupyData);
+                                if (indexToRemove !== -1) {
+                                    occupyDataArray.splice(indexToRemove, 1);
+                                    saveDataToFile('occupyDataArray', JSON.stringify(occupyDataArray));
+                                }
+                            }
+                        }, 1000);
+                    });
+                } else {
+                    console.error('Error: occupyDataArray is empty or not found.');
+                }
+            } else {
+                console.error('Error: Outbound movements fieldset not found.');
+            }
+        }
+    }
+
+
+    function handleStyleChanges(mutationsList) {
+        for (const mutation of mutationsList) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                const fieldsetElement = mutation.target;
+                const computedStyle = getComputedStyle(fieldsetElement);
+                const holdFieldsets = document.getElementsByName('holdFieldset');
+                if (holdFieldsets) {
+                    holdFieldsets.forEach((holdFieldset, index) => {
+                        if (getComputedStyle(holdFieldset).display === 'block') {
+                            typeID = holdFieldset.parentNode.querySelector('select[name="ArmyActionTypeID"]').value;
+                            if (typeID == 5 || typeID == 8) {
+                                const sendButton = holdFieldset.parentNode.querySelector('input[value="Send"]');
+                                if (sendButton) {
+                                    sendButton.addEventListener('click', () => sendButtonClick(holdFieldset), { once: true });
+                                }
+                            }
+                        } else {
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    function sendButtonClick(holdFieldset) {
+        occupyDataArray = loadDataFromFile('occupyDataArray');
+        const occupyData = getOccupyData(holdFieldset);
+        if (occupyDataArray !== null) {
+            const existingOccupyDataIndex = occupyDataArray.findIndex(data => data[5] === occupyData[5] && data[4] === occupyData[4]);
+            if (existingOccupyDataIndex !== -1) {
+                occupyDataArray[existingOccupyDataIndex] = occupyData;
+            } else {
+                occupyDataArray.push(occupyData);
+            }
+            saveDataToFile('occupyDataArray', JSON.stringify(occupyDataArray));
+            console.log(occupyDataArray);
+        } else {
+        }
+    }
+
+
+    function saveDataToFile(filename, data) {
+        try {
+            localStorage.setItem(filename, data);
+            console.log(`Data saved to file: ${filename}`);
+        } catch (error) {
+            console.error(`Error saving data to file: ${error}`);
+        }
+    }
+
+    function loadDataFromFile(filename) {
+        try {
+            const data = localStorage.getItem(filename);
+            if (data && data.trim() !== '') {
+                return JSON.parse(data);
+            } else {
+                return [];
+            }
+        } catch (error) {
+            console.error(`Error loading data from file: ${error}`);
+            return null;
+        }
+    }
+
+    urlObserver.observe(document.documentElement, { childList: true, subtree: true });
+})();
