@@ -1,0 +1,113 @@
+// ==UserScript==
+// @name		  linkify
+// @namespace	  http://youngpup.net/userscripts
+// @description   Turn plain-linkstext URLstext URLs into linkshyperlinks
+// @match         https://elgea.illyriad.co.uk/*
+// @match         https://elgea.illyriad.co.uk/*
+// @exclude       http://*.illyriad.co.uk/Account/*
+// @exclude       https://*.illyriad.co.uk/Account/*
+// @exclude       http://forum.illyriad.co.uk/*
+// @grant         GM_xmlhttpRequest
+// @downloadURL   https://durctools.uk/gm/linkify.user.js
+// @updateURL     https://durctools.uk/gm/linkify.user.js
+// @version       2.0
+// ==/UserScript==
+
+// based on code by Aaron Boodman
+// and included here with his gracious permission
+
+var linkers = {
+
+};
+linkers.gc = {
+    setup: function () {
+        var gc = document.querySelector('div.globalChat');
+        var observer = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                linkers.gc.checkLinks(gc);
+            });
+        });
+        // configuration of the observer:
+        var config = {childList: true};
+        // pass in the target node, as well as the observer options
+        observer.observe(gc, config);
+    },
+    checkLinks: function (gc) {
+        //	window.alert('New GC post.');
+        var urlRegex = /\b(https?:\/\/[^\s+\"\<\>]+)/ig;
+        var snapTextElements = document.evaluate(".//text()[not(ancestor::a) and not(ancestor::script) and not(ancestor::style) and contains(translate(., 'HTTP', 'http'), 'http')]", gc, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+        for (var i = snapTextElements.snapshotLength - 1; i >= 0; i--) {
+            var elmText = snapTextElements.snapshotItem(i);
+            if (urlRegex.test(elmText.nodeValue)) {
+                var elmSpan = document.createElement("span");
+                var sURLText = elmText.nodeValue;
+                elmText.parentNode.replaceChild(elmSpan, elmText);
+                urlRegex.lastIndex = 0;
+                for (var match = null, lastLastIndex = 0;
+                     (match = urlRegex.exec(sURLText)); ) {
+                    elmSpan.appendChild(document.createTextNode(
+                        sURLText.substring(lastLastIndex, match.index)));
+                    var elmLink = document.createElement("a");
+                    elmLink.setAttribute("href", match[0]);
+                    elmLink.setAttribute("target","_blank");
+                    elmLink.title = 'linkified by Greasemonkey!';
+                    elmLink.style.textDecoration = 'none';
+                    elmLink.style.borderBottom = '1px dotted red';
+                    elmLink.appendChild(document.createTextNode(match[0]));
+                    elmSpan.appendChild(elmLink);
+                    lastLastIndex = urlRegex.lastIndex;
+                }
+                elmSpan.appendChild(document.createTextNode(
+                    sURLText.substring(lastLastIndex)));
+                elmSpan.normalize();
+            }
+        }
+    }
+}
+linkers.ac = {
+    setup: function () {
+        var ac = document.querySelector('div.allianceChat');
+        var observer = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                linkers.ac.checkLinks(ac);
+            });
+        });
+        // configuration of the observer:
+        var config = {childList: true};
+        // pass in the target node, as well as the observer options
+        observer.observe(ac, config);
+    },
+    checkLinks: function (ac) {
+        //	window.alert('New GC post.');
+        var urlRegex = /\b(https?:\/\/[^\s+\"\<\>]+)/ig;
+        var snapTextElements = document.evaluate(".//text()[not(ancestor::a) and not(ancestor::script) and not(ancestor::style) and contains(translate(., 'HTTP', 'http'), 'http')]", ac, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+        for (var i = snapTextElements.snapshotLength - 1; i >= 0; i--) {
+            var elmText = snapTextElements.snapshotItem(i);
+            if (urlRegex.test(elmText.nodeValue)) {
+                var elmSpan = document.createElement("span");
+                var sURLText = elmText.nodeValue;
+                elmText.parentNode.replaceChild(elmSpan, elmText);
+                urlRegex.lastIndex = 0;
+                for (var match = null, lastLastIndex = 0;
+                     (match = urlRegex.exec(sURLText)); ) {
+                    elmSpan.appendChild(document.createTextNode(
+                        sURLText.substring(lastLastIndex, match.index)));
+                    var elmLink = document.createElement("a");
+                    elmLink.setAttribute("href", match[0]);
+                    elmLink.setAttribute("target","_blank");
+                    elmLink.title = 'linkified by Greasemonkey!';
+                    elmLink.style.textDecoration = 'none';
+                    elmLink.style.borderBottom = '1px dotted red';
+                    elmLink.appendChild(document.createTextNode(match[0]));
+                    elmSpan.appendChild(elmLink);
+                    lastLastIndex = urlRegex.lastIndex;
+                }
+                elmSpan.appendChild(document.createTextNode(
+                    sURLText.substring(lastLastIndex)));
+                elmSpan.normalize();
+            }
+        }
+    }
+}
+linkers.gc.setup();
+linkers.ac.setup();
