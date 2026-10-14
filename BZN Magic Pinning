@@ -1,0 +1,198 @@
+// ==UserScript==
+// @name         [BZNCODE] Illyriad Magic Pinning
+// @namespace    http://bazoon.town
+// @version      1.0
+// @description  Adds functionality to pin spells to the top of the spell list
+// @author       Bazoon
+// @match        https://elgea.illyriad.co.uk/*
+// ==/UserScript==
+
+(function () {
+    'use strict';
+    var saveState = false;
+    var pinnedSpells = [];
+
+    function drawToggleButton() {
+        const existingToggleButton = document.querySelector(`div[MP-toggle-button="true"]`);
+        if (!existingToggleButton) {
+            const toggleButton = document.createElement('div');
+            toggleButton.textContent = `PIN`;
+            toggleButton.style.position = 'absolute';
+            toggleButton.style.top = `210px`;
+            toggleButton.style.left = `692px`;
+            toggleButton.style.backgroundColor = 'rgba(255, 0, 0, 0.0)';
+            toggleButton.style.border = '1px solid #804e06';
+            toggleButton.style.cursor = 'pointer';
+            toggleButton.style.padding = '3px 1px 2px 1px';
+            toggleButton.style.fontWeight = 'bold';
+            toggleButton.setAttribute(`MP-toggle-button`, 'true');
+            toggleButton.onclick = () => {
+                if (saveState) {
+                    toggleButton.style.color = '#804e06';
+                    saveState = false;
+                    savePinnedSpells();
+                } else {
+                    toggleButton.style.color = 'rgba(0, 255, 0, 1.0)';
+                    saveState = true;
+                    savePinnedSpells();
+                }
+            };
+            document.body.appendChild(toggleButton);
+        }
+    }
+
+    function drawPinnedFieldset() {
+        const existingPinnedFieldset = document.querySelector(`fieldset[MP-pinned-fieldset="true"]`);
+        const infoDiv = document.querySelector('.info');
+        if (infoDiv) {
+            if (!existingPinnedFieldset) {
+                loadPinnedSpells();
+                const pinnedFieldset = document.createElement('fieldset');
+                pinnedFieldset.innerHTML = `
+                    <legend>Pinned</legend>
+                    <div id="pinnedSpellList" class="accordionSpells ui-accordion ui-widget ui-helper-reset ui-accordion-icons" role="tablist"></div>
+                `;
+                pinnedFieldset.setAttribute(`MP-pinned-fieldset`, 'true');
+                infoDiv.insertBefore(pinnedFieldset, infoDiv.firstChild);
+                const pinnedSpellListDiv = document.getElementById('pinnedSpellList');
+                function moveSpellToPinned(spellHeader) {
+                    let nextElement = spellHeader.nextElementSibling;
+                    pinnedSpellListDiv.appendChild(spellHeader);
+                    if (nextElement) pinnedSpellListDiv.appendChild(nextElement);
+                }
+                function removeSpellToPinned(spellHeader) {
+                    let nextElement = spellHeader.nextElementSibling;
+                    spellHeader.style.display = 'none';
+                    spellHeader.remove();
+                    if (nextElement) {
+                        nextElement.style.display = 'none';
+                        nextElement.remove();
+                    }
+                }
+                function findSpellHeader(spellName) {
+                    const spellHeaders = document.querySelectorAll('.ui-accordion-header[role="tab"]');
+                    for (const header of spellHeaders) {
+                        const headerText = header.textContent.trim();
+                        if (headerText === spellName) {
+                            return header;
+                        }
+                    }
+                    return null;
+                }
+                pinnedSpells.forEach((spellName) => {
+                    const spellHeader = findSpellHeader(spellName);
+                    if (spellHeader) {
+                        moveSpellToPinned(spellHeader);
+                    }
+                });
+                const spellElements = document.querySelectorAll('.ui-accordion-header[role="tab"]');
+                spellElements.forEach((spellElement) => {
+                    spellElement.addEventListener('click', (event) => {
+                        if (saveState) {
+                            event.preventDefault();
+                            const spellName = spellElement.textContent.trim();
+                            if (!pinnedSpells.includes(spellName)) {
+                                pinnedSpells.push(spellName);
+                                savePinnedSpells();
+                                moveSpellToPinned(spellElement);
+                                console.log(`Spell added to pinned list: ${spellName}`);
+                            } else {
+                                const index = pinnedSpells.indexOf(spellName);
+                                if (index !== -1) {
+                                    pinnedSpells.splice(index, 1);
+                                    savePinnedSpells();
+                                    removeSpellToPinned(spellElement);
+                                    console.log(`Spell removed from pinned list: ${spellName}`);
+                                }
+                            }
+                            spellElement.classList.remove('ui-state-active');
+                            spellElement.classList.add('ui-state-default');
+                            spellElement.setAttribute('aria-expanded', 'false');
+                            const accordionContent = document.querySelector('.ui-accordion-content-active');
+                            if (accordionContent) {
+                                accordionContent.style.height = '0';
+                                accordionContent.style.display = 'none';
+                            }
+                            moveSpellToPinned(spellElement);
+                        }
+                    });
+                });
+            }
+        }
+    }
+
+
+    function removeToggleButton() {
+        const existingToggleButton = document.querySelector(`div[MP-toggle-button="true"]`);
+        if (existingToggleButton) {
+            existingToggleButton.remove();
+        }
+    }
+
+    function removePinnedFieldset() {
+        const existingPinnedFieldset = document.querySelector(`div[MP-pinned-fieldset="true"]`);
+        if (existingPinnedFieldset) {
+            existingPinnedFieldset.remove();
+        }
+    }
+
+    function removeAllButtons() {
+        removeToggleButton();
+        removePinnedFieldset();
+    }
+
+    function drawAllButtons() {
+        drawToggleButton();
+        drawPinnedFieldset();
+    }
+
+    function savePresetToFile(filename, data) {
+        try {
+            localStorage.setItem(filename, data);
+            //console.log(`Preset saved: ${data}`);
+        } catch (error) {
+            //console.error(`Error saving preset: ${error}`);
+        }
+    }
+
+    function loadPresetFromFile(filename) {
+        try {
+            const data = localStorage.getItem(filename);
+            return data;
+        } catch (error) {
+            //console.error(`Error loading preset: ${error}`);
+            return null;
+        }
+    }
+
+    function savePinnedSpells() {
+        const pinnedSpellsString = JSON.stringify(pinnedSpells);
+        savePresetToFile('pinnedSpells', pinnedSpellsString);
+    }
+
+    function loadPinnedSpells() {
+        const pinnedSpellsString = loadPresetFromFile('pinnedSpells');
+        if (pinnedSpellsString) {
+            try {
+                const loadedPinnedSpells = JSON.parse(pinnedSpellsString);
+                pinnedSpells = loadedPinnedSpells;
+                //console.log(`Pinned spells loaded: ${pinnedSpells}`);
+            } catch (error) {
+                //console.error(`Error parsing pinned spells: ${error}`);
+            }
+        }
+    }
+
+    const urlObserver = new MutationObserver(() => {
+        if (window.location.href.startsWith('https://elgea.illyriad.co.uk/#/Magic/Cast')) {
+            const infoDiv = document.querySelector('.info');
+            if (infoDiv) {
+                drawAllButtons();
+            }
+        } else {
+            removeAllButtons();
+        }
+    });
+
+    urlObserver.observe(document.documentElement, { childList: true, subtree: true });
+})();
