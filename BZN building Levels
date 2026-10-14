@@ -1,0 +1,167 @@
+// ==UserScript==
+// @name         [BZNCODE] Illyriad Building Level Display
+// @namespace    http://bazoon.town
+// @version      1.0
+// @description  Adds a toggleable display for building levels on the town map in Illyriad
+// @author       Bazoon
+// @match        https://elgea.illyriad.co.uk/*
+// ==/UserScript==
+
+(function () {
+    'use strict';
+    const rangeRed = 6;
+    const rangeOrange = 11;
+    const rangeYellow = 19;
+    var selectedTown = null;
+    let createdTextBoxes = {};
+    let toggleState = localStorage.getItem('textbox_toggle') || 'off';
+
+    function toggleTextBoxes() {
+        if (toggleState === 'on') {
+            toggleState = 'off';
+            localStorage.removeItem('textbox_toggle');
+        } else {
+            toggleState = 'on';
+            localStorage.setItem('textbox_toggle', 'on');
+        }
+    }
+
+    function createTextBox(buildingLevel, posX, posY, buildingIndex) {
+        if (toggleState === 'off') return;
+        const textBox = document.createElement('div');
+        textBox.style.position = 'absolute';
+        textBox.style.top = posY + 'px';
+        textBox.style.left = posX + 'px';
+        if (buildingLevel >= 0 && buildingLevel <= rangeRed) {
+            const redColor = 'rgba(255, 0, 0, 0.5)';
+            textBox.style.backgroundColor = redColor;
+            textBox.style.borderColor = redColor.replace('0.5', '1.0');
+        } else if (buildingLevel > rangeRed && buildingLevel <= rangeOrange) {
+            const orangeColor = 'rgba(255, 165, 0, 0.5)';
+            textBox.style.backgroundColor = orangeColor;
+            textBox.style.borderColor = orangeColor.replace('0.5', '1.0');
+        } else if (buildingLevel > rangeOrange && buildingLevel <= rangeYellow) {
+            const yellowColor = 'rgba(154, 205, 50, 0.5)';
+            textBox.style.backgroundColor = yellowColor;
+            textBox.style.borderColor = yellowColor.replace('0.5', '1.0');
+        } else {
+            const greenColor = 'rgba(0, 128, 0, 0.5)';
+            textBox.style.backgroundColor = greenColor;
+            textBox.style.borderColor = greenColor.replace('0.5', '1.0');
+        }
+        textBox.style.padding = '0px 1px 0px 1px';
+        textBox.style.borderStyle = 'solid';
+        textBox.style.borderWidth = '1px';
+        textBox.style.pointerEvents = 'none';
+        textBox.style.color = 'LemonChiffon';
+        textBox.style.fontSize = '18px';
+        textBox.style.fontWeight = 'bold';
+        textBox.innerText = buildingLevel;
+        document.body.appendChild(textBox);
+        createdTextBoxes[buildingIndex] = textBox;
+    }
+
+    function removeTextboxes() {
+        for (const buildingIndex in createdTextBoxes) {
+            if (createdTextBoxes.hasOwnProperty(buildingIndex)) {
+                const textBox = createdTextBoxes[buildingIndex];
+                if (textBox && textBox.parentNode) {
+                    textBox.parentNode.removeChild(textBox);
+                }
+            }
+        }
+        createdTextBoxes = {};
+    }
+
+    function extractBuildingData() {
+        const mapZoomMove = document.getElementById('mapZoomMove');
+        if (!mapZoomMove) return;
+        const areas = mapZoomMove.querySelectorAll('area');
+        const elementToAdjust = document.querySelector('table.generic.builds');
+        const elementHeight = elementToAdjust ? elementToAdjust.offsetHeight : 0;
+        areas.forEach((area, index) => {
+            const title = area.getAttribute('title');
+            const coords = area.getAttribute('coords').split(',').map((coord) => parseInt(coord.trim()));
+            const levelMatch = title.match(/(\d+)\]/);
+            if (levelMatch) {
+                const buildingLevel = parseInt(levelMatch[1]);
+                const buildingIndex = 'building_' + index;
+                if (!createdTextBoxes[buildingIndex]) {
+                    const posX = coords[0] + 50 + (title.includes("Wall") ? 20 : 0);
+                    const posY = coords[1] + 227 + elementHeight + (title.includes("Wall") ? 72 : 0);
+                    createTextBox(buildingLevel, posX, posY, buildingIndex);
+                }
+            }
+        });
+    }
+
+    function drawToggleButton() {
+        const existingToggleButton = document.querySelector('div[data-toggle-button="true"]');
+        if (!existingToggleButton) {
+            const toggleButton = document.createElement('div');
+            toggleButton.textContent = 'LVL';
+            toggleButton.style.position = 'absolute';
+            toggleButton.style.top = '209px';
+            toggleButton.style.left = '690px';
+            toggleButton.style.backgroundColor = 'rgba(255, 0, 0, 0.0)';
+            if (toggleState === 'on') {
+                toggleButton.style.color = '#804e06';
+            } else {
+                toggleButton.style.color = 'rgba(255, 0, 0, 1.0)';
+            }
+            toggleButton.style.border = '1px solid #804e06';
+            toggleButton.style.cursor = 'pointer';
+            toggleButton.style.padding = '0px 1px 0px 1px';
+            toggleButton.style.fontWeight = 'bold';
+            toggleButton.setAttribute('data-toggle-button', 'true');
+            toggleButton.onclick = () => {
+                if (toggleState === 'off') {
+                    toggleButton.style.color = '#804e06';
+                } else {
+                    toggleButton.style.color = 'rgba(255, 0, 0, 1.0)';
+                }
+                toggleTextBoxes();
+                removeTextboxes();
+                extractBuildingData();
+            };
+            document.body.appendChild(toggleButton);
+        }
+    }
+
+    function removeToggleButton() {
+        const toggleButton = document.querySelector('div[data-toggle-button="true"]');
+        if (toggleButton) {
+            toggleButton.remove();
+        }
+    }
+
+    const urlObserver = new MutationObserver(() => {
+        if (window.location.href === 'https://elgea.illyriad.co.uk/#/Town/Map') {
+            extractBuildingData();
+            drawToggleButton();
+        } else {
+            removeTextboxes();
+            removeToggleButton();
+        }
+    });
+
+    const townObserver = new MutationObserver(() => {
+        const currentTown = document.getElementById('mapZoomMove');
+        if (currentTown) {
+            if(currentTown !== selectedTown) {
+                selectedTown = currentTown;
+                setTimeout(() => {
+                    removeTextboxes();
+                    extractBuildingData();
+                }, 1);
+            }
+        }
+    });
+
+    if (toggleState === 'off') {
+        removeTextboxes();
+    }
+
+    urlObserver.observe(document.documentElement, { childList: true, subtree: true });
+    townObserver.observe(document.documentElement, { childList: true, subtree: true });
+})();
