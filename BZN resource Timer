@@ -1,0 +1,118 @@
+// ==UserScript==
+// @name         [BZNCODE] Illyriad Resource Timer 1.4
+// @namespace    http://bazoon.town
+// @version      1.4
+// @description  Calculates time remaining until you run out of gold and mana
+// @author       Bazoon
+// @match        https://elgea.illyriad.co.uk/*
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    function isTargetElementVisible() {
+        var targetElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[2]/td[1]')
+        return targetElement && targetElement.offsetParent !== null;
+    }
+
+    function extractResourceData() {
+        var goldElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[1]/td[1]')
+        var manaElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[1]/td[13]')
+        var researchElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[1]/td[15]')
+        var foodElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[1]/td[11]')
+        var woodElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[1]/td[3]')
+        var clayElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[1]/td[5]')
+        var ironElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[1]/td[7]')
+        var stoneElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[1]/td[9]')
+        
+        var goldUpkeepElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[2]/td[1]')
+        var manaUpkeepElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[2]/td[7]')
+        var researchUpkeepElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[2]/td[8]')
+        var foodUpkeepElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[2]/td[6]')
+        var woodUpkeepElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[2]/td[2]')
+        var clayUpkeepElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[2]/td[3]')
+        var ironUpkeepElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[2]/td[4]')
+        var stoneUpkeepElement = getElementByXPath('/html/body/div[1]/div[1]/div/div[1]/table/tbody/tr/td[5]/table/tbody/tr[2]/td[5]')
+
+        var resourceData = {
+            goldCount: goldElement ? goldElement.getAttribute('data') : '0',
+            manaCount: manaElement ? manaElement.getAttribute('data') : '0',
+            researchCount: researchElement ? researchElement.getAttribute('data') : '0',
+            foodCount: foodElement ? foodElement.getAttribute('data') : '0',
+            woodCount: woodElement ? woodElement.getAttribute('data') : '0',
+            clayCount: clayElement ? clayElement.getAttribute('data') : '0',
+            ironCount: ironElement ? ironElement.getAttribute('data') : '0',
+            stoneCount: stoneElement ? stoneElement.getAttribute('data') : '0',
+            
+            goldUpkeep: goldUpkeepElement ? goldUpkeepElement.getAttribute('data') : '0',
+            manaUpkeep: manaUpkeepElement ? manaUpkeepElement.getAttribute('data') : '0',
+            researchUpkeep: researchUpkeepElement ? researchUpkeepElement.getAttribute('data') : '0',
+            foodUpkeep: foodUpkeepElement ? foodUpkeepElement.getAttribute('data') : '0',
+            woodUpkeep: woodUpkeepElement ? woodUpkeepElement.getAttribute('data') : '0',
+            clayUpkeep: clayUpkeepElement ? clayUpkeepElement.getAttribute('data') : '0',
+            ironUpkeep: ironUpkeepElement ? ironUpkeepElement.getAttribute('data') : '0',
+            stoneUpkeep: stoneUpkeepElement ? stoneUpkeepElement.getAttribute('data') : '0',
+        };
+        return resourceData;
+    }
+
+    function calculateTimeRemaining(resourceCount, upkeep) {
+        var resourceAmount = parseFloat(resourceCount);
+        var upkeepAmount = parseFloat(upkeep);
+        if (upkeepAmount < 0) {
+            var timeRemainingHours = resourceAmount / Math.abs(upkeepAmount);
+            var days = Math.floor(timeRemainingHours / 24);
+            var hours = Math.round(timeRemainingHours % 24);
+            return `${days}d ${hours}h`;
+        }
+        return null;
+    }
+
+    function updateResourceText() {
+        var resourceData = extractResourceData();
+        var resourceText = document.querySelector('#resourceRemaining');
+
+        if (resourceText) {
+            var timeRemainingGold = calculateTimeRemaining(resourceData.goldCount, resourceData.goldUpkeep);
+            resourceText.innerHTML = timeRemainingGold ? `G: ${timeRemainingGold}<br>` : '';
+            var timeRemainingMana = calculateTimeRemaining(resourceData.manaCount, resourceData.manaUpkeep);
+            resourceText.innerHTML += timeRemainingMana ? `M: ${timeRemainingMana}<br>` : '';
+            var timeRemainingResearch = calculateTimeRemaining(resourceData.researchCount, resourceData.researchUpkeep);
+            resourceText.innerHTML += timeRemainingResearch ? `R: ${timeRemainingResearch}<br>` : '';
+            var timeRemainingFood = calculateTimeRemaining(resourceData.foodCount, resourceData.foodUpkeep);
+            resourceText.innerHTML += timeRemainingFood ? `F: ${timeRemainingFood}<br>` : '';
+            var timeRemainingWood = calculateTimeRemaining(resourceData.woodCount, resourceData.woodUpkeep);
+            resourceText.innerHTML += timeRemainingWood ? `W: ${timeRemainingWood}<br>` : '';
+            var timeRemainingClay = calculateTimeRemaining(resourceData.clayCount, resourceData.clayUpkeep);
+            resourceText.innerHTML += timeRemainingClay ? `C: ${timeRemainingClay}<br>` : '';
+            var timeRemainingIron = calculateTimeRemaining(resourceData.ironCount, resourceData.ironUpkeep);
+            resourceText.innerHTML += timeRemainingIron ? `I: ${timeRemainingIron}<br>` : '';
+            var timeRemainingStone = calculateTimeRemaining(resourceData.stoneCount, resourceData.stoneUpkeep);
+            resourceText.innerHTML += timeRemainingStone ? `S: ${timeRemainingStone}<br>` : '';
+        }
+    }
+
+    var checkInterval = setInterval(function() {
+        if (isTargetElementVisible()) {
+            clearInterval(checkInterval);
+            var resourceText = document.createElement('span');
+            resourceText.id = 'resourceRemaining';
+            resourceText.style.fontWeight = 'bold';
+            resourceText.style.fontSize = '14px';
+            resourceText.style.position = 'absolute';
+            resourceText.style.left = '35px';
+            resourceText.style.top = '125px';
+            resourceText.style.backgroundColor = 'transparent';
+            resourceText.style.border = 'none';
+            var targetElement = document.evaluate('/html/body/div[1]/div[2]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+            if (targetElement) {
+                targetElement.insertAdjacentElement('afterend', resourceText);
+            }
+            setInterval(updateResourceText, 500);
+        }
+    }, 500);
+
+    function getElementByXPath(path) {
+        return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+    }
+})();
