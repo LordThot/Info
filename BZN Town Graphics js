@@ -1,0 +1,274 @@
+// ==UserScript==
+// @name         [BZNCODE] Illyriad Town Map Graphics
+// @namespace    http://bazoon.town
+// @version      1.0
+// @description  Adds new graphics for Illyriad town map screen
+// @match        https://elgea.illyriad.co.uk/*
+// @run-at       document-start
+// @grant        unsafeWindow
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_deleteValue
+// @grant        GM_listValues
+// @grant        GM_xmlhttpRequest
+// @grant        GM_registerMenuCommand
+// @connect      bazoon.town
+// ==/UserScript==
+
+(function () {
+  'use strict';
+
+  const BASE = 'https://bazoon.town/i/assets';
+  const ASSET_VERSION = '2026-09-28i';
+  const HUMAN_DIR = '/img/town/human/';
+  const FILES = [
+    'back.jpg',
+    '03-roads.png',
+    '03-squarebushes.png',
+    '03-fountain.png',
+    '03-wall_upper.png',
+    '03-wall_lower.png',
+    'lumberwood.png',
+    '03-castle_off.png',
+    '03-castle_on.png',
+  ];
+  const RACES = { 1: 'human', 2: 'elf', 3: 'dwarf', 4: 'orc' };
+  const OFFSETS = {
+    dwarf: { '03-castle_off.png': [-8, 0], '03-castle_on.png': [-8, 0] },
+    orc: { '03-castle_off.png': [-5, 0], '03-castle_on.png': [-5, 0] },
+    beet: { '03-castle_off.png': [-14, 2], '03-castle_on.png': [-14, 2] },
+  };
+  const THEMES = ['elf', 'dwarf', 'orc', 'beet'];
+  const MIME = { jpg: 'image/jpeg', png: 'image/png' };
+  const FLAG = 'data-race-asset';
+
+  const W = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+  const isRace = (name) => Object.values(RACES).includes(name);
+  const localSetting = (key) => {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  };
+  const DEBUG = !!localSetting('illyRaceDebug');
+  const log = (...args) => console.log('[RaceTownAssets]', ...args);
+
+  let raceName = null;
+  let themeName = null;
+  let raceConfirmed = false;
+  let raceAssets = null;
+  let hideStyle = null;
+
+  const cacheKey = (race, file) => `img:${ASSET_VERSION}:${race}:${file}`;
+  const remoteUrl = (race, file) => `${BASE}/${race}/${file}?v=${encodeURIComponent(ASSET_VERSION)}`;
+
+  function buildAssets(race) {
+    const assets = {};
+    for (const file of FILES) assets[file] = GM_getValue(cacheKey(race, file), null) || remoteUrl(race, file);
+    return assets;
+  }
+
+  function toDataUrl(buffer, file) {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return `data:${MIME[file.split('.').pop()]};base64,${btoa(binary)}`;
+  }
+
+  function fillCache(race) {
+    const wanted = new Set(FILES.map((file) => cacheKey(race, file)));
+    for (const key of GM_listValues()) {
+      if (key.startsWith('img:') && !wanted.has(key)) GM_deleteValue(key);
+    }
+    for (const file of FILES) {
+      if (GM_getValue(cacheKey(race, file), null)) continue;
+      GM_xmlhttpRequest({
+        method: 'GET',
+        url: remoteUrl(race, file),
+        responseType: 'arraybuffer',
+        onload: (res) => {
+          if (res.status !== 200 || !res.response) return log('download failed', file, res.status);
+          const data = toDataUrl(res.response, file);
+          GM_setValue(cacheKey(race, file), data);
+          if (race === themeName && raceAssets) raceAssets[file] = data;
+        },
+        onerror: () => log('download failed', file),
+      });
+    }
+  }
+
+  function overrideRace() {
+    const race = (localSetting('illyRaceOverride') || '').toLowerCase();
+    return isRace(race) || race === 'beet' ? race : null;
+  }
+
+  const beetMode = () => !!GM_getValue('beetMode', false);
+  const themeFor = (race) => (race && beetMode() ? 'beet' : race);
+
+  function detectRace() {
+    const override = overrideRace();
+    if (override) return override;
+    if (Number.isInteger(W.CurRaceId) && RACES[W.CurRaceId]) return RACES[W.CurRaceId];
+    for (const name of [W.RaceName, W.properties && W.properties.Race]) {
+      if (typeof name === 'string' && isRace(name.toLowerCase())) return name.toLowerCase();
+    }
+    for (const script of document.querySelectorAll('script:not([src])')) {
+      const byId = /var\s+CurRaceId\s*=\s*(\d+)/.exec(script.textContent);
+      if (byId && RACES[+byId[1]]) return RACES[+byId[1]];
+      const byName = /RaceName\s*=\s*"(\w+)"/.exec(script.textContent);
+      if (byName && isRace(byName[1].toLowerCase())) return byName[1].toLowerCase();
+    }
+    return null;
+  }
+
+  function setRace(race) {
+    if (race === raceName) return;
+    raceName = race;
+    themeName = themeFor(race);
+    raceAssets = THEMES.includes(themeName) ? buildAssets(themeName) : null;
+    log(`race=${race}` + (themeName !== race ? ` theme=${themeName}` : ''));
+  }
+
+  function hideOriginals(hide) {
+    if (hide && !hideStyle) {
+      hideStyle = document.createElement('style');
+      hideStyle.textContent =
+        FILES.map((file) => `img[src*="${HUMAN_DIR}${file}"]`).join(',') + '{visibility:hidden !important}';
+      (document.head || document.documentElement).appendChild(hideStyle);
+      setTimeout(() => hideOriginals(false), 8000);
+    } else if (!hide && hideStyle) {
+      hideStyle.remove();
+      hideStyle = null;
+    }
+  }
+
+  function fileOf(url) {
+    if (!url) return null;
+    try {
+      const u = new URL(url, location.href);
+      if (!/(^|\.)illyriad\.(net|co\.uk)$/.test(u.hostname) || !u.pathname.startsWith(HUMAN_DIR)) return null;
+      const file = u.pathname.slice(HUMAN_DIR.length);
+      return FILES.includes(file) ? file : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function replacementFor(url) {
+    const file = raceAssets && fileOf(url);
+    return file ? raceAssets[file] : null;
+  }
+
+  const imgProto = W.HTMLImageElement.prototype;
+  const elementProto = W.Element.prototype;
+  const srcDescriptor = Object.getOwnPropertyDescriptor(imgProto, 'src');
+  const getAttr = elementProto.getAttribute;
+  const setAttr = elementProto.setAttribute;
+
+  function assign(img, original) {
+    const replacement = replacementFor(original);
+    if (DEBUG && original.includes('/img/town/')) log('src', original, replacement ? 'swapped' : 'kept');
+    if (replacement) {
+      const offset = OFFSETS[themeName] && OFFSETS[themeName][fileOf(original)];
+      setAttr.call(img, FLAG, original);
+      img.style.transform = offset ? `translate(${offset[0]}px, ${offset[1]}px)` : '';
+      if (getAttr.call(img, 'src') !== replacement) srcDescriptor.set.call(img, replacement);
+      return;
+    }
+    if (getAttr.call(img, FLAG) !== null) {
+      img.removeAttribute(FLAG);
+      img.style.transform = '';
+    }
+    srcDescriptor.set.call(img, original);
+  }
+
+  Object.defineProperty(imgProto, 'src', {
+    configurable: true,
+    enumerable: srcDescriptor.enumerable,
+    get() {
+      const original = getAttr.call(this, FLAG);
+      return original ? new URL(original, location.href).href : srcDescriptor.get.call(this);
+    },
+    set(value) {
+      assign(this, String(value));
+    },
+  });
+
+  elementProto.getAttribute = function (name) {
+    if (this instanceof W.HTMLImageElement && String(name).toLowerCase() === 'src') {
+      const original = getAttr.call(this, FLAG);
+      if (original) return original;
+    }
+    return getAttr.apply(this, arguments);
+  };
+
+  elementProto.setAttribute = function (name, value) {
+    if (this instanceof W.HTMLImageElement && String(name).toLowerCase() === 'src') {
+      return assign(this, String(value));
+    }
+    return setAttr.apply(this, arguments);
+  };
+
+  function processImg(img) {
+    const original = getAttr.call(img, FLAG) || getAttr.call(img, 'src');
+    if (!fileOf(original)) return;
+    if ((replacementFor(original) || original) !== getAttr.call(img, 'src')) assign(img, original);
+  }
+
+  function scan(root) {
+    if (!root || root.nodeType !== Node.ELEMENT_NODE) return;
+    if (root.tagName === 'IMG') processImg(root);
+    root.querySelectorAll('img').forEach(processImg);
+  }
+
+  function tryDetect() {
+    if (raceConfirmed) return true;
+    const race = detectRace();
+    if (!race) return false;
+    raceConfirmed = true;
+    if (!overrideRace()) GM_setValue('race', race);
+    setRace(race);
+    hideOriginals(!!raceAssets);
+    if (raceAssets) fillCache(themeName);
+    scan(document.documentElement);
+    return true;
+  }
+
+  new MutationObserver((mutations) => {
+    if (!raceConfirmed) tryDetect();
+    for (const m of mutations) {
+      if (m.type === 'childList') {
+        m.addedNodes.forEach(scan);
+      } else if (m.target.tagName === 'IMG') {
+        const src = getAttr.call(m.target, 'src');
+        if (fileOf(src) && replacementFor(src)) assign(m.target, src);
+      }
+    }
+  }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
+
+  GM_registerMenuCommand(beetMode() ? 'Mist or Beets (O)' : 'Mist or Beets (X)', () => {
+    GM_setValue('beetMode', !beetMode());
+    location.reload();
+  });
+
+  const remembered = overrideRace() || GM_getValue('race', null);
+  if (remembered && THEMES.includes(themeFor(remembered))) {
+    setRace(remembered);
+    hideOriginals(true);
+  }
+
+  W.addEventListener('load', () => hideOriginals(false));
+
+  (function poll(tries) {
+    if (tryDetect()) return;
+    if (tries > 0) {
+      setTimeout(() => poll(tries - 1), 200);
+    } else {
+      log('could not detect race');
+      hideOriginals(false);
+    }
+  })(100);
+})();
