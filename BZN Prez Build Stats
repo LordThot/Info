@@ -1,0 +1,243 @@
+// ==UserScript==
+// @name         [BZNCODE] Illyriad Pres Build Display
+// @namespace    http://bazoon.town
+// @version      1.0
+// @description  Adds a toggleable display for Pres Build Stats in Illyriad
+// @author       Bazoon
+// @match        https://elgea.illyriad.co.uk/*
+// ==/UserScript==
+
+(function () {
+    'use strict';
+    var playerData = {};
+    var totalTowns = 0;
+
+    function drawToggleButton() {
+        const existingToggleButton = document.querySelector('div[PBS-toggle-button="true"]');
+        if (!existingToggleButton) {
+            const toggleButton = document.createElement('div');
+            toggleButton.textContent = 'PBS';
+            toggleButton.style.position = 'absolute';
+            toggleButton.style.top = '209px';
+            toggleButton.style.left = '687px';
+            toggleButton.style.backgroundColor = 'rgba(255, 0, 0, 0.0)';
+            toggleButton.style.border = '1px solid #804e06';
+            toggleButton.style.cursor = 'pointer';
+            toggleButton.style.padding = '0px 1px 0px 1px';
+            toggleButton.style.fontWeight = 'bold';
+            toggleButton.setAttribute('PBS-toggle-button', 'true');
+            toggleButton.onclick = () => {
+                playerData = {};
+                totalTowns = 0;
+                collectResourceData();
+                //console.log(playerData);
+                drawDialogBox();
+            };
+            document.body.appendChild(toggleButton);
+        }
+    }
+
+    function collectResourceData() {
+        const tableXpath = '/html/body/div[1]/div[2]/table/tbody/tr[1]/td[1]/div/div/div/div[2]/fieldset[1]/table';
+        const tableElement = document.evaluate(tableXpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+        const tableRows = tableElement.querySelectorAll(' tr[data-eventid]');
+        tableRows.forEach(row => {
+            const playerNameElement = row.querySelector('span.name[data^="ps="]');
+            let playerName = playerNameElement ? playerNameElement.textContent.trim() : '';
+            const allianceMatch = playerName.match(/(.+)\s+\[(.*?)\]/);
+            if (allianceMatch) {
+                let playerNameWithoutTag = allianceMatch[1];
+                const allianceTag = allianceMatch[2];
+                playerNameWithoutTag = playerNameWithoutTag.replace(/'s$/, ''); 
+                playerName = `[${allianceTag}] ${playerNameWithoutTag}`;
+            }
+            const townNum = 2 + totalTowns;
+            const tdXpath = `/html/body/div[1]/div[2]/table/tbody/tr[1]/td[1]/div/div/div/div[2]/fieldset[1]/table/tbody/tr[${townNum}]/td[5]`;
+            const tdElement = document.evaluate(tdXpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+            const tdTextContent = tdElement.textContent;
+            const resourceData = { };
+            const resourceIcons = tdElement.querySelectorAll('span.name.resIcon');
+            resourceIcons.forEach(resourceIcon => {
+                const resourceType = resourceIcon.getAttribute('title').toLowerCase();
+                const resourceAmountElement = resourceIcon.previousSibling;
+                const resourceAmount = parseInt(resourceAmountElement.textContent.trim());
+                resourceData[resourceType] = resourceAmount;
+            });
+            if (!playerData[playerName]) {
+                playerData[playerName] = {
+                    towns: 0,
+                    resources: {
+                        wood: 0,
+                        clay: 0,
+                        iron: 0,
+                        stone: 0
+                    }
+                };
+            }
+            totalTowns += 1;
+            playerData[playerName].towns += 1;
+            playerData[playerName].resources.wood += resourceData.wood ? resourceData.wood : 0;
+            playerData[playerName].resources.clay += resourceData.clay ? resourceData.clay : 0;
+            playerData[playerName].resources.iron += resourceData.iron ? resourceData.iron : 0;
+            playerData[playerName].resources.stone += resourceData.stone ? resourceData.stone : 0;
+        });
+        const sortedPlayerData = Object.entries(playerData).sort(([nameA, dataA], [nameB, dataB]) => {
+            const totalResA = dataA.resources.wood + dataA.resources.clay + dataA.resources.iron + dataA.resources.stone;
+            const totalResB = dataB.resources.wood + dataB.resources.clay + dataB.resources.iron + dataB.resources.stone;
+            return totalResB - totalResA;
+        });
+        playerData = {};
+        sortedPlayerData.forEach(([name, data]) => {
+            playerData[name] = data;
+        });
+    }
+
+    function drawDialogBox() {
+        var dialogBox = document.createElement('div');
+        dialogBox.title = 'Prestige Build Stats';
+        dialogBox.classList.add('ui-dialog', 'ui-widget', 'ui-widget-content', 'ui-corner-all', 'ui-draggable');
+        var table = document.createElement('table');
+        table.classList.add('pbs-table');
+        var thead = document.createElement('thead');
+        var headerRow = document.createElement('tr');
+        var columns = ['Player Name', 'Towns', 'Total', 'Wood', 'Clay', 'Iron', 'Stone'];
+        columns.forEach(columnText => {
+            var th = document.createElement('th');
+            th.style.textAlign = 'left';
+            th.textContent = columnText + "\xa0";
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        var totalValues = {
+            playerName: 'Total',
+            townCount: 0,
+            totalRes: 0,
+            wood: 0,
+            clay: 0,
+            iron: 0,
+            stone: 0,
+        };
+        for (const playerName in playerData) {
+            if (playerData.hasOwnProperty(playerName)) {
+                const playerStats = playerData[playerName];
+                const totalPlayerRes =
+                      playerStats.resources.wood +
+                      playerStats.resources.clay +
+                      playerStats.resources.iron +
+                      playerStats.resources.stone;
+                var row = document.createElement('tr');
+                var rowData = [
+                    playerName,
+                    playerStats.towns,
+                    numberWithCommas(totalPlayerRes),
+                    numberWithCommas(playerStats.resources.wood),
+                    numberWithCommas(playerStats.resources.clay),
+                    numberWithCommas(playerStats.resources.iron),
+                    numberWithCommas(playerStats.resources.stone),
+                ];
+                rowData.forEach(data => {
+                    var cell = document.createElement('td');
+                    cell.style.textAlign = 'left';
+                    cell.textContent = data + "\xa0";
+                    row.appendChild(cell);
+                });
+                tbody.appendChild(row);
+                totalValues.townCount += playerStats.towns;
+                totalValues.totalRes += totalPlayerRes;
+                totalValues.wood += playerStats.resources.wood;
+                totalValues.clay += playerStats.resources.clay;
+                totalValues.iron += playerStats.resources.iron;
+                totalValues.stone += playerStats.resources.stone;
+            }
+        }
+        var totalRow = document.createElement('tr');
+        var totalRowData = [
+            totalValues.playerName,
+            totalValues.townCount,
+            numberWithCommas(totalValues.totalRes),
+            numberWithCommas(totalValues.wood),
+            numberWithCommas(totalValues.clay),
+            numberWithCommas(totalValues.iron),
+            numberWithCommas(totalValues.stone),
+        ];
+        totalRowData.forEach(data => {
+            var cell = document.createElement('td');
+            cell.textContent = data + "\xa0";
+            cell.style.textAlign = 'left';
+            totalRow.appendChild(cell);
+        });
+        tbody.insertBefore(totalRow, tbody.firstChild);
+        table.appendChild(tbody);
+        dialogBox.appendChild(table);
+        document.body.appendChild(dialogBox);
+        $(dialogBox).dialog({
+            modal: true,
+            width: 'auto',
+            height: 'auto',
+            buttons: {
+                Lotto: function () {
+                    const weightedPlayerNames = [];
+                    for (const playerName in playerData) {
+                        if (playerData.hasOwnProperty(playerName)) {
+                            const playerStats = playerData[playerName];
+                            for (let i = 0; i < playerStats.towns; i++) {
+                                weightedPlayerNames.push(playerName);
+                            }
+                        }
+                    }
+                    const randomIndex = Math.floor(Math.random() * weightedPlayerNames.length);
+                    const randomPlayerName = weightedPlayerNames[randomIndex];
+                    var message = document.createElement('p');
+                    message.textContent = `Winner: ${randomPlayerName} !`;
+                    message.style.marginBottom = '10px';
+                    $(this).parent().find('.ui-dialog-buttonset').after(message);
+                },
+                Thank: function () {
+                    const senders = Object.keys(playerData);
+                    var thankYouMessage = '';
+                    if (senders.length > 0) {
+                        thankYouMessage = `Thank you ${senders.join(', ')} for the res! I received ${numberWithCommas(totalValues.totalRes)} res!`;
+                    } else {
+                        thankYouMessage = 'No resources sent.';
+                    }
+                    var message = document.createElement('p');
+                    message.textContent = thankYouMessage;
+                    message.style.marginBottom = '10px';
+                    $(this).parent().find('.ui-dialog-buttonset').after(message);
+                    const range = document.createRange();
+                    range.selectNodeContents(message);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    document.execCommand('copy');
+                },
+            },
+            close: function () {
+                $(this).remove();
+            },
+        });
+    }
+
+    function numberWithCommas(x) {
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    function removeToggleButton() {
+        const toggleButton = document.querySelector('div[PBS-toggle-button="true"]');
+        if (toggleButton) {
+            toggleButton.remove();
+        }
+    }
+
+    const urlObserver = new MutationObserver(() => {
+        if (window.location.href === 'https://elgea.illyriad.co.uk/#/Trade/Movements') {
+            drawToggleButton();
+        } else {
+            removeToggleButton();
+        }
+    });
+
+    urlObserver.observe(document.documentElement, { childList: true, subtree: true });
+})();
