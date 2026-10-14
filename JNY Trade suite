@@ -1,0 +1,453 @@
+
+
+// ==UserScript==
+// @name         [JNY] Market Stats Suite FAST FIX
+// @namespace    Market-Stats
+// @version      10.4
+// @match        *://elgea.illyriad.co.uk/*
+// @run-at       document-end
+// ==/UserScript==
+
+(() => {
+
+"use strict";
+
+// ==================================================
+// CONSTANTS
+// ==================================================
+
+const TAX = 0.034286;
+const NET = 1 - TAX;
+
+// ==================================================
+// STATE
+// ==================================================
+
+let active = false;
+let observer = null;
+let lastSnap = "";
+
+const processed = new WeakSet();
+
+// ==================================================
+// FAST HELPERS
+// ==================================================
+
+const priceOf = r =>
+    Number(r.cells?.[3]?.textContent.replace(/,/g, "")) || null;
+
+const qtyOf = r =>
+    Number(r.cells?.[2]?.textContent.replace(/,/g, "")) || null;
+
+// ==================================================
+// ROW CAPTURE (lightweight)
+// ==================================================
+
+function handleRow(r) {
+
+    if (processed.has(r)) return;
+    if (!r.querySelector(".nameYou")) return;
+
+    processed.add(r);
+
+    const q = qtyOf(r);
+    const p = priceOf(r);
+
+    if (Number.isFinite(q)) temp.quantity = q;
+    if (Number.isFinite(p)) temp.price = p;
+}
+
+// shared temp
+const temp = { quantity: null, price: null };
+
+// ==================================================
+// SCAN TABLE (fast)
+// ==================================================
+
+function scanTable(table, mode, excludeYou = false) {
+
+    const rows = table?.tBodies?.[0]?.rows;
+    if (!rows) return null;
+
+    let best = null;
+
+    for (let i = 0; i < rows.length; i++) {
+
+        const r = rows[i];
+
+        if (excludeYou && r.querySelector(".nameYou")) continue;
+
+        const p = priceOf(r);
+        if (!Number.isFinite(p)) continue;
+
+        if (best === null) best = p;
+        else if (mode === "max" ? p > best : p < best)
+            best = p;
+    }
+
+    return best;
+}
+
+function findMine(table) {
+
+    const rows = table?.tBodies?.[0]?.rows;
+    if (!rows) return null;
+
+    for (let r of rows) {
+        if (r.querySelector(".nameYou"))
+            return priceOf(r);
+    }
+
+    return null;
+}
+
+// ==================================================
+// SCAN
+// ==================================================
+
+function scan() {
+
+    const buyers = document.getElementById("Buyers");
+    const sellers = document.getElementById("Sellers");
+
+    if (!buyers || !sellers) return null;
+
+    return {
+        marketBuy: scanTable(buyers, "max", true),
+        marketSell: scanTable(sellers, "min", true),
+        totalBuy: scanTable(buyers, "max", false),
+        totalSell: scanTable(sellers, "min", false),
+        myBuy: findMine(buyers),
+        mySell: findMine(sellers)
+    };
+}
+
+// ==================================================
+// CALC
+// ==================================================
+
+function spread(buy, sell) {
+
+    if (!Number.isFinite(buy) || !Number.isFinite(sell))
+        return null;
+
+    const value = (sell * NET) - buy;
+
+    return {
+        value,
+        pct: (value / buy) * 100
+    };
+}
+
+function calc(d) {
+
+    const market = spread(d.marketBuy, d.marketSell);
+    const total = spread(d.totalBuy, d.totalSell);
+
+    const yours =
+        (Number.isFinite(d.myBuy) && Number.isFinite(d.mySell))
+            ? spread(d.myBuy, d.mySell)
+            : null;
+
+    // ==================================================
+    // PER ITEM DIFF (AFTER TAX)
+    // ==================================================
+
+    let diff = null;
+
+    if (Number.isFinite(d.marketBuy) && Number.isFinite(d.marketSell)) {
+
+        const sellAfterTax = d.marketSell * NET;
+        const value = sellAfterTax - d.marketBuy;
+
+        diff = {
+            value,
+            pct: (value / d.marketBuy) * 100
+        };
+    }
+
+    return {
+        market,
+        total,
+        yours,
+        diff,
+
+        minSell: Number.isFinite(d.totalBuy)
+            ? d.totalBuy / NET
+            : null,
+
+        maxBuy: Number.isFinite(d.totalSell)
+            ? d.totalSell * NET
+            : null
+    };
+}
+
+// ==================================================
+// UI
+// ==================================================
+
+function attach(title) {
+
+    const h2 = [...document.querySelectorAll("h2")]
+        .find(x => x.textContent.includes(title));
+
+    if (!h2) return null;
+
+    let box = h2.querySelector(".jny-box");
+
+    if (!box) {
+
+        box = document.createElement("div");
+
+        box.className = "jny-box";
+
+        box.style.cssText = `
+            font-size:8px;
+            margin-top:2px;
+            display:flex;
+            gap:6px;
+            flex-wrap:wrap;
+        `;
+
+        h2.appendChild(box);
+    }
+
+    return box;
+}
+
+function fmt(label, s) {
+    return !s
+        ? `${label}:NA`
+        : `${label}:${s.value.toFixed(3)}/${s.pct.toFixed(1)}%`;
+}
+
+// ==================================================
+// RENDER (includes diff)
+// ==================================================
+
+function render(r) {
+
+    const b = attach("Buyers");
+
+    if (b) {
+        b.innerHTML = `
+<div>${fmt("Mkt", r.market)}</div>
+<div>${fmt("Tot", r.total)}</div>
+<div>${fmt("You", r.yours)}</div>
+<div>${fmt("Diff", r.diff)}</div>
+<div>MinS:${r.minSell?.toFixed(3) ?? "NA"}</div>
+<div>MaxB:${r.maxBuy?.toFixed(3) ?? "NA"}</div>
+`;
+    }
+
+    const s = attach("Sellers");
+
+    if (s) {
+        s.innerHTML = `<div>Market excludes yours</div>`;
+    }
+}
+
+// ==================================================
+// BREAK EVEN (RESTORED FULL)
+// ==================================================
+
+function updateBreakEven(dialog) {
+
+    const heading = dialog.querySelector("h2");
+
+    const row = [...dialog.querySelectorAll("tr")]
+        .find(r => r.textContent.includes("Total Order Value"));
+
+    const pane = dialog.closest(".ui-dialog")
+        ?.querySelector(".ui-dialog-buttonpane");
+
+    if (!heading || !row || !pane) return;
+
+    const cell = row.querySelector("td.right");
+    if (!cell) return;
+
+    const total = Number(cell.textContent.replace(/,/g, ""));
+    if (!Number.isFinite(total)) return;
+
+    const qtyMatch = heading.textContent.match(/\d[\d,]*/);
+    if (!qtyMatch) return;
+
+    const qty = Number(qtyMatch[0].replace(/,/g, ""));
+    if (!Number.isFinite(qty)) return;
+
+    const perUnit = total / qty;
+
+    let value, label;
+
+    if (heading.textContent.includes("Buying")) {
+        value = perUnit / NET;
+        label = "Min Sell";
+    } else if (heading.textContent.includes("Selling")) {
+        value = perUnit * NET;
+        label = "Max Buy";
+    } else return;
+
+    let el = pane.querySelector(".jny-be");
+
+    if (!el) {
+
+        el = document.createElement("div");
+        el.className = "jny-be";
+
+        el.style.cssText = `
+            position:absolute;
+            left:10px;
+            top:50%;
+            transform:translateY(-50%);
+            font-size:11px;
+            pointer-events:none;
+            white-space:nowrap;
+        `;
+
+        pane.style.position = "relative";
+        pane.appendChild(el);
+    }
+
+    el.textContent = `${label} ${value.toFixed(3)}`;
+}
+
+// ==================================================
+// FAST BUTTON (unchanged but stable)
+// ==================================================
+
+function injectButton(dialog) {
+
+    if (dialog.dataset.jnyBtn) return;
+    dialog.dataset.jnyBtn = "1";
+
+    const typeInput =
+        dialog.querySelector('input[name="BuyOrSell01"]');
+
+    if (!typeInput || typeInput.value !== "0") return;
+
+    const btn = document.createElement("button");
+
+    btn.style.cssText = `
+        position:absolute;
+        top:6px;
+        right:6px;
+        width:16px;
+        height:16px;
+        background:yellow;
+        border:2px solid black;
+        z-index:10;
+    `;
+
+    btn.addEventListener("click", () => {
+
+        const q = dialog.querySelector('input[name="Quantity"]');
+        const p = dialog.querySelector('input[name="PricePerItem"]');
+
+        if (!q || !p) return;
+
+        q.value = temp.quantity ?? "";
+        p.value = Number.isFinite(temp.price)
+            ? temp.price.toFixed(2)
+            : "";
+    });
+
+    dialog.appendChild(btn);
+}
+
+// ==================================================
+// DIALOG INIT (IMPORTANT FIX FOR SPEED)
+// ==================================================
+
+function initDialog(dialog) {
+
+    injectButton(dialog);
+
+    if (dialog.dataset.beInit) return;
+    dialog.dataset.beInit = "1";
+
+    const loop = setInterval(() => {
+
+        if (!document.body.contains(dialog)) {
+            clearInterval(loop);
+            return;
+        }
+
+        updateBreakEven(dialog);
+
+    }, 400);
+}
+
+// ==================================================
+// CORE UPDATE (throttled + fast)
+// ==================================================
+
+function update() {
+
+    if (!active) return;
+
+    const data = scan();
+    if (!data) return;
+
+    const snap = JSON.stringify(data);
+
+    if (snap === lastSnap) return;
+
+    lastSnap = snap;
+    render(calc(data));
+}
+
+// ==================================================
+// OBSERVER (LIGHTWEIGHT)
+// ==================================================
+
+function start() {
+
+    if (active) return;
+    active = true;
+
+    document.querySelectorAll("tr.middle")
+        .forEach(handleRow);
+
+    observer = new MutationObserver(() => {
+
+        document.querySelectorAll(".OrderDialog")
+            .forEach(initDialog);
+
+        update();
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    requestAnimationFrame(() => {
+        document.querySelectorAll(".OrderDialog")
+            .forEach(initDialog);
+    });
+}
+
+function stop() {
+    active = false;
+    observer?.disconnect();
+    observer = null;
+}
+
+// ==================================================
+// ROUTER
+// ==================================================
+
+function isMarket() {
+    return location.hash.includes("#/Trade/Markets");
+}
+
+function route() {
+    if (isMarket()) start();
+    else stop();
+}
+
+window.addEventListener("hashchange", route);
+setInterval(route, 500);
+route();
+
+})();
