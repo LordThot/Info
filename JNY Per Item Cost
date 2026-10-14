@@ -1,0 +1,114 @@
+Per item cost in mail
+
+// ==UserScript==
+// @name         [JNY] Per Item Cost 
+// @namespace    illyriad.mail.trade.price
+// @version      1.6
+// @match        https://elgea.illyriad.co.uk/*
+// @description calculates per item price on buy and sell mail
+// @run-at       document-start
+// @grant        none
+// ==/UserScript==
+
+(function () {
+    'use strict';
+
+    function isMailPage() {
+        return location.hash.includes("/Communication/ReadMail/");
+    }
+
+    function parseTradeBlock(td) {
+        const text = td.innerText;
+
+        const qtyMatch = text.match(/(\d+)\s+of a total/i);
+        const goldMatch = text.match(/for a total of\s+([\d,.]+)/i);
+
+        if (!qtyMatch || !goldMatch) return null;
+
+        const qty = parseInt(qtyMatch[1], 10);
+        const gold = parseFloat(goldMatch[1].replace(/,/g, ''));
+
+        if (!qty || !gold) return null;
+
+        return gold / qty;
+    }
+
+    function formatNumber(num) {
+        if (!isFinite(num)) return null;
+
+        let str = String(num);
+
+        if (str.includes('.')) {
+            str = str.replace(/0+$/, '').replace(/\.$/, '');
+        }
+
+        const parts = str.split('.');
+        parts[0] = Number(parts[0]).toLocaleString();
+
+        return parts.join('.');
+    }
+
+    function injectPrice(td) {
+        if (td.dataset.unitPriceDone) return;
+
+        const price = parseTradeBlock(td);
+        if (price === null) return;
+
+        td.dataset.unitPriceDone = "1";
+
+        const badge = document.createElement("span");
+        badge.textContent = ` ${formatNumber(price)} gold/item`;
+
+        // IMPORTANT: do NOT break table layout
+        badge.style.color = "#000";
+        badge.style.fontSize = "inherit";
+        badge.style.fontWeight = "600";
+        badge.style.pointerEvents = "none";
+        badge.style.whiteSpace = "nowrap";
+        badge.style.marginLeft = "6px";
+
+        td.appendChild(badge);
+    }
+
+    function scan(root) {
+        if (!isMailPage()) return;
+
+        const scope = root || document;
+        const tds = scope.querySelectorAll?.('td[colspan="2"]');
+
+        if (tds) {
+            for (const td of tds) injectPrice(td);
+        }
+    }
+
+    // initial scan
+    scan();
+
+    // SPA observer (safe + lightweight)
+    const observer = new MutationObserver((mutations) => {
+
+        if (!isMailPage()) return;
+
+        for (const m of mutations) {
+            for (const node of m.addedNodes) {
+
+                if (node.nodeType !== 1) continue;
+
+                if (node.matches?.('td[colspan="2"]')) {
+                    injectPrice(node);
+                }
+
+                const matches = node.querySelectorAll?.('td[colspan="2"]');
+                if (matches?.length) {
+                    for (const td of matches) injectPrice(td);
+                }
+            }
+        }
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+})();
