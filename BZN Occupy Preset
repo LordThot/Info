@@ -1,0 +1,224 @@
+// ==UserScript==
+// @name         [BZNCODE] Illyriad Occupation Time Presets
+// @namespace    http://bazoon.town
+// @version      1.0
+// @description  Adds buttons for easier management of occupation time in Illyriad
+// @author       Bazoon
+// @match        https://elgea.illyriad.co.uk/*
+// ==/UserScript==
+
+(function () {
+    'use strict';
+    var armyDivOld = null;
+    var holdFieldsetsA = null;
+    let observer;
+    var saveState = false;
+    var typeID = 0;
+
+    function drawPresetButton(holdFieldset, index, buttonNumber, xPos, yOff) {
+        const existingPresetButton = document.querySelector(`div[OPY-preset-button-${index}-${buttonNumber}="true"]`);
+        if (!existingPresetButton) {
+            const presetButton = document.createElement('div');
+            const yPos = holdFieldset.getBoundingClientRect().top + window.scrollY + 20 + yOff;
+            presetButton.textContent = `\xa0${buttonNumber}\xa0`;
+            presetButton.style.position = 'absolute';
+            presetButton.style.top = `${yPos}px`;
+            presetButton.style.left = `${xPos}px`;
+            presetButton.style.backgroundColor = 'rgba(255, 0, 0, 0.0)';
+            presetButton.style.border = '1px solid #804e06';
+            presetButton.style.cursor = 'pointer';
+            presetButton.style.padding = '3px 1px 2px 1px';
+            presetButton.style.fontWeight = 'bold';
+            presetButton.setAttribute(`OPY-preset-button-${index}-${buttonNumber}`, 'true');
+            const presetDataString = loadPresetFromFile(`preset-${buttonNumber}`);
+            if (presetDataString) {
+                const presetData = JSON.parse(presetDataString);
+                const [dayCount, hourCount, minCount] = [
+                    presetData.dayCount,
+                    presetData.hourCount,
+                    presetData.minCount
+                ];
+                presetButton.title = `${dayCount}d ${hourCount}h, ${minCount}m`;
+            } else {
+                presetButton.title = "No preset data saved.";
+            }
+            presetButton.onclick = () => {
+                const presetDataString = loadPresetFromFile(`preset-${buttonNumber}`);
+                if (saveState) {
+                    const occupyTime = getOccupyTime(index);
+                    const presetData = {
+                        dayCount: occupyTime[0],
+                        hourCount: occupyTime[1],
+                        minCount: occupyTime[2]
+                    };
+                    presetButton.title = `${presetData.dayCount}d ${presetData.hourCount}h, ${presetData.minCount}m`;
+                    const presetDataStringSave = JSON.stringify(presetData);
+                    savePresetToFile(`preset-${buttonNumber}`, presetDataStringSave);
+                } else if (presetDataString) {
+                    const presetData = JSON.parse(presetDataString);
+                    setOccupyTime(index, presetData.dayCount, presetData.hourCount, presetData.minCount);
+                } else {
+                    alert("No preset data found. Save preset data first.");
+                }
+            };
+            document.body.appendChild(presetButton);
+        }
+    }
+
+    function drawToggleButton(holdFieldset, index, xPos, yOff) {
+        const existingToggleButton = document.querySelector(`div[OPY-toggle-button-${index}="true"]`);
+        if (!existingToggleButton) {
+            const toggleButton = document.createElement('div');
+            const yPos = holdFieldset.getBoundingClientRect().top + window.scrollY + 20 + yOff;
+            toggleButton.textContent = `\xa0SAVE\xa0`;
+            toggleButton.style.position = 'absolute';
+            toggleButton.style.top = `${yPos}px`;
+            toggleButton.style.left = `${xPos}px`;
+            toggleButton.style.backgroundColor = 'rgba(255, 0, 0, 0.0)';
+            toggleButton.style.border = '1px solid #804e06';
+            toggleButton.style.cursor = 'pointer';
+            toggleButton.style.padding = '3px 1px 2px 1px';
+            toggleButton.style.fontWeight = 'bold';
+            toggleButton.setAttribute(`OPY-toggle-button-${index}`, 'true');
+            toggleButton.onclick = () => {
+                if (saveState) {
+                    toggleButton.style.color = '#804e06';
+                    saveState = false;
+                } else {
+                    toggleButton.style.color = 'rgba(0, 255, 0, 1.0)';
+                    saveState = true;
+                }
+            };
+            document.body.appendChild(toggleButton);
+        }
+    }
+
+    function removePresetButton(index, buttonNumber) {
+        const existingPresetButton = document.querySelector(`div[OPY-preset-button-${index}-${buttonNumber}="true"]`);
+        if (existingPresetButton) {
+            existingPresetButton.remove();
+        }
+    }
+
+    function removeToggleButton(index) {
+        const existingToggleButton = document.querySelector(`div[OPY-toggle-button-${index}="true"]`);
+        if (existingToggleButton) {
+            existingToggleButton.remove();
+        }
+    }
+
+    function removeAllButtons() {
+        for (var i = 0; i <= 4; i++) {
+            removePresetButton(i,1);
+            removePresetButton(i,2);
+            removePresetButton(i,3);
+            removePresetButton(i,4);
+            removePresetButton(i,5);
+            removeToggleButton(i);
+        }
+    }
+
+    function drawAllButtons(holdFieldset, index) {
+        var x = typeID == 6 ? 350 : 34;
+        var y = typeID == 6 ? 0 : 110;
+        drawPresetButton(holdFieldset, index, 1, x, y);
+        drawPresetButton(holdFieldset, index, 2, x+30, y);
+        drawPresetButton(holdFieldset, index, 3, x+60, y);
+        drawPresetButton(holdFieldset, index, 4, x+90, y);
+        drawPresetButton(holdFieldset, index, 5, x+120, y);
+        drawToggleButton(holdFieldset, index, x+150, y);
+    }
+
+    function setOccupyTime (holdFieldSet, dayCount, hourCount, minCount) {
+        var holdFieldSets = document.getElementsByName('holdFieldset');
+        var td = holdFieldSets.item(holdFieldSet).querySelector('td');
+        td.querySelector('select[name="holdDays"').options.selectedIndex = dayCount;
+        td.querySelector('select[name="holdHours"').options.selectedIndex = hourCount;
+        td.querySelector('select[name="holdMins"').options.selectedIndex = minCount;
+    }
+
+    function getOccupyTime (holdFieldSet) {
+        var holdFieldSets = document.getElementsByName('holdFieldset');
+        var td = holdFieldSets.item(holdFieldSet).querySelector('td');
+        var days = td.querySelector('select[name="holdDays"').options.selectedIndex;
+        var hours = td.querySelector('select[name="holdHours"').options.selectedIndex;
+        var mins = td.querySelector('select[name="holdMins"').options.selectedIndex;
+        return [days, hours, mins];
+    }
+
+    const occObserver = new MutationObserver(() => {
+        const armyDiv = document.getElementById('Armies');
+        if (armyDiv) {
+            if(armyDiv !== armyDivOld) {
+                if(observer) {
+                    observer.disconnect();
+                    observer = null;
+                }
+                armyDivOld = armyDiv;
+                holdFieldsetsA = document.querySelectorAll('fieldset[name="holdFieldset"]');
+                observer = new MutationObserver(handleStyleChanges);
+                holdFieldsetsA.forEach(fieldset => {
+                    observer.observe(fieldset, { attributes: true, attributeFilter: ['style'] });
+                });
+            }
+        }
+    });
+
+    const urlObserver = new MutationObserver(() => {
+        const regex = /^https:\/\/elgea\.illyriad\.co\.uk\/#\/Military\/Orders\/.*/;
+        if (regex.test(window.location.href)) {
+            occObserver.observe(document.documentElement, { childList: true, subtree: true });
+        } else {
+            occObserver.disconnect();
+            removeAllButtons();
+        }
+    });
+
+    function handleStyleChanges(mutationsList) {
+        for (const mutation of mutationsList) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                const fieldsetElement = mutation.target;
+                const computedStyle = getComputedStyle(fieldsetElement);
+                const holdFieldsets = document.getElementsByName('holdFieldset');
+                if (holdFieldsets) {
+                    holdFieldsets.forEach((holdFieldset, index) => {
+                        if (getComputedStyle(holdFieldset).display === 'block') {
+                            typeID = holdFieldset.parentNode.querySelector('select[name="ArmyActionTypeID"]').value;
+                            if (typeID == 5 || typeID == 6 || typeID == 8) {
+                                drawAllButtons(holdFieldset, index);
+                            }
+                        } else {
+                            removePresetButton(index, 1);
+                            removePresetButton(index, 2);
+                            removePresetButton(index, 3);
+                            removePresetButton(index, 4);
+                            removePresetButton(index, 5);
+                            removeToggleButton(index);
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    function savePresetToFile(filename, data) {
+        try {
+            localStorage.setItem(filename, data);
+            console.log(`Preset saved: ${filename}`);
+        } catch (error) {
+            console.error(`Error saving preset: ${error}`);
+        }
+    }
+
+    function loadPresetFromFile(filename) {
+        try {
+            const data = localStorage.getItem(filename);
+            return data;
+        } catch (error) {
+            console.error(`Error loading preset: ${error}`);
+            return null;
+        }
+    }
+
+    urlObserver.observe(document.documentElement, { childList: true, subtree: true });
+})();
