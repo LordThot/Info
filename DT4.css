@@ -1,0 +1,720 @@
+#mapOverlaySettings {
+  & .overlays {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  & fieldset {
+    display: flex;
+    align-items: center;
+    max-width: 200px;
+    min-width: 190px;
+  }
+  & .role {
+    & input {
+      width: 70px;
+      display: block;
+    }
+    & label {
+      display: block;
+      margin-top: 1rem;
+    }
+    & label > span {
+      height: 35px;
+      /* text-align: center; */
+      display: inline-block;
+    }
+    & label > span.c2 {
+      height: auto;
+    }
+  }
+  /* & overlaySettings {
+    width: 100px;
+  }
+  & .overlaySettings > legend {
+    height: 2em;
+  } */
+  & input[type="checkbox"]:checked::before {
+    content: "On";
+  }
+  & input[type="checkbox"]:not(:checked)::before {
+    content: "Off";
+  }
+}
+
+.overlays > fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  position: relative;
+  & span.c {
+    font-weight: bold;
+    height: 3rem;
+  }
+  & input[type="color"] {
+    height: 70px;
+  }
+  & input[type="radio"] {
+    top: -15px;
+    position: relative;
+  }
+  & td {
+    border: solid 1px black;
+    vertical-align: middle;
+  }
+}
+.onoff tr:nth-of-type(1) > td:nth-of-type(1) {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  min-width: 2ch;
+}
+
+.onoff input[type="checkbox"] {
+  position: relative;
+  bottom: 15px;
+  left: 20px;
+}
+
+.hostile {
+  background-color: rgba(255, 0, 0, 0.5);
+}
+.yours {
+  background-color: rgba(0, 0, 255, 0.5);
+}
+.coords {
+	min-width: 11ch;
+}
+div.dtoddeven > div:nth-child(odd) {
+  background-image: none;
+  background-color: var(--cbackground);
+  padding: 2px;
+}
+div.dtoddeven > div:nth-child(even) {
+  background-image: none;
+  /* background-color:rgba(231,217,168,.5); */
+  background-color: hsl(from var(--cbackground) h s calc(l - 50));
+  padding: 2px;
+}
+
+.bordered {
+  border: solid black 2px;
+}
+.closetool {
+  width: 20px;
+  height: 20px;
+}
+#chatcolourinputs {
+  border-collapse: collapse;
+}
+#chatcolourinputs td {
+  margin-left: 2px;
+  margin-right: 5px;
+}
+/* .dt_chatcolours_post {
+	color: var(--post);
+}
+.dt_chatcolours_poster {
+	color: var(--poster);
+}
+
+.dt_rainbowac {
+	background-color: palegreen;
+}
+.dt_rainbowgc {
+	background-color: lightsalmon;
+}
+.dt_rainbowpc {
+	background-color: yellowgreen;
+} */
+
+.trivia {
+  background-color: orange !important;
+  border: orange solid 4px;
+}
+.dt-added-button {
+  background-image: url("/images/btn-background.png");
+  border: 0 none;
+  color: #fff;
+  cursor: pointer;
+  float: left;
+  font-size: 6pt;
+  height: 30px;
+  width: 55px;
+  margin: 5px;
+}
+.dt-added-button:disabled,
+.dt-added-button[disabled] {
+  background-image: none;
+  border: 1px solid #999999;
+  background-color: #cccccc;
+  color: #666666;
+}
+.noItems {
+  filter: invert(100%);
+}
+
+.greenB {
+  background-color: hsl(120, 100%, 25.1%, 50%);
+}
+.yellowB {
+  background-color: hsl(60, 100%, 50%, 50%);
+}
+.redB {
+  background-color: hsl(0, 100%, 50%, 50%);
+}
+.orange2B {
+  background-color: #ff5500;
+}
+.orange1B {
+  background-color: #ffaa00;
+}
+.warn {
+  color: red;
+  background-color: blue;
+}
+.rDone {
+  background-color: greenyellow;
+}
+.rRemaining {
+  background-color: palevioletred;
+}
+.menuBut {
+  background-color: #21610b;
+  color: #00f803;
+}
+
+.dt-popup-option {
+  color: green;
+}
+#dt_logo_img {
+  cursor: pointer;
+}
+#durcbut {
+  position: absolute;
+  cursor: pointer;
+}
+.durcbut {
+  background-image: url("https://v3.durctools.uk/images/durc.png");
+  background-size: 62px 80px;
+  display: inline-block;
+  height: 80px;
+  padding: 0;
+  margin: 0;
+  vertical-align: top;
+  width: 62px;
+  cursor: pointer;
+}
+.maxb {
+  width: 40px;
+  background-color: red;
+  color: white;
+  margin-left: 10px;
+}
+.dtActive {
+  background-color: PaleGreen;
+}
+.dthover {
+  cursor: pointer;
+}
+.dtcamp {
+  width: 24px;
+  height: 24px;
+}
+.dtcamp2 {
+  width: 24px;
+  height: 24px;
+  background: url("//assets.illyriad.net/img/map/flags/encampment2.png")
+    no-repeat top left;
+  background-size: 24px;
+}
+.dtresIcon {
+  width: 24px;
+  height: 24px;
+}
+.ck-button {
+  margin: 4px;
+  background-color: red;
+  border-radius: 50%;
+  border: 1px solid #d0d0d0;
+  overflow: auto;
+  float: left;
+}
+.tooldiv {
+  position: absolute;
+  background-color: white;
+  border: solid blue 5px;
+  font-size: 1em;
+}
+.toolHeader {
+  width: 100%;
+  background-color: gray;
+  font-size: 1.25em;
+  color: white;
+}
+.tooldiv > .contents {
+  height: 90%;
+}
+.scrollable {
+  overflow: scroll;
+  max-height: 90%;
+}
+#dtrcampstable {
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+#dtrmutable th,
+#dtrcampstable th {
+  position: sticky;
+  top: 0;
+  background-color: lightslategray;
+  border: solid black 12px;
+  text-align: center;
+}
+#dtrcampstable th,
+#dtrcampstable th a {
+  color: lightgray;
+}
+.smWidth {
+  width: 100px;
+}
+.medWidth {
+  width: 150px;
+}
+.lgWidth {
+  width: 200px;
+}
+.dt4cbox {
+  padding: 3px;
+  border: solid black 1px;
+  white-space: nowrap;
+}
+#campSizesSelect .spans {
+  display: flex;
+  flex-wrap: wrap;
+}
+#tooltop {
+  font-size: 11px;
+  background-color: #000;
+  resize: both;
+  background-image: url("//assets.illyriad.net/img/backgrounds/paper2.jpg");
+
+  position: absolute;
+  overflow: scroll;
+  border-width: 3px;
+}
+#durcTools3 {
+  font-size: 11px;
+  background-color: #000;
+  resize: both;
+  background-image: url("//assets.illyriad.net/img/backgrounds/paper2.jpg");
+  width: 320px;
+  position: absolute;
+  border-width: 3px;
+}
+#dt_log {
+  max-height: 38px;
+  border: solid black;
+  border-width: 1px;
+  overflow-y: scroll;
+}
+
+.nosee {
+  display: none;
+}
+.see {
+  display: block;
+}
+.menuicon {
+  height: 32px;
+  width: 32px;
+}
+.hlptbl {
+  width: 100%;
+}
+.imgLeft {
+  float: left;
+  padding: 0 20px 10px 0;
+}
+.dtFs {
+  padding: 0;
+  margin: 0;
+}
+.pc10 {
+  width: 10%;
+}
+.pc90 {
+  width: 90%;
+}
+.pc45 {
+  width: 45%;
+}
+.pc48 {
+  width: 48%;
+}
+.fullW {
+  width: 100%;
+}
+.fLeft {
+  float: left;
+}
+.fRight {
+  float: right;
+}
+.hlpicon {
+  height: 24px;
+  width: 24px;
+}
+.tblBorders {
+  width: 100%;
+  border: solid black;
+  border-collapse: collapse;
+}
+#storedTradesList {
+  width: 100%;
+}
+.subInvItem {
+  display: "inline-block";
+  float: left;
+  text-align: center;
+  padding: 1px;
+  width: 19%;
+  min-width: 40px;
+  max-width: 50px;
+}
+.titleCell {
+  height: 28px;
+  text-align: center;
+  vertical-align: central;
+  font-size: larger;
+  font-weight: bold;
+}
+.sovunequal {
+  background-color: red;
+}
+.green {
+  background-color: green;
+}
+.red {
+  color: red;
+}
+.bl {
+  border: solid black 1px;
+}
+.bl td {
+  border: solid black 1px;
+  text-align: center;
+  min-width: 20px;
+}
+.bl tr {
+  vertical-align: middle;
+  min-height: 20px;
+}
+.blue {
+  color: blue;
+}
+.greenT {
+  color: green;
+}
+.tLeft {
+  text-align: left;
+}
+.tRight {
+  text-align: right;
+}
+.tCenter {
+  text-align: center;
+}
+.dtProdTable td {
+  border-left: 1px solid grey;
+  border-right: 1px solid grey;
+  padding-left: 5px;
+  padding-right: 1px;
+}
+.dtProdTable th {
+  border: solid 2px black;
+}
+.dtProdTable {
+  border: solid 1px black;
+}
+.tiny {
+  font-size: 0.1pt;
+  color: #fffae7;
+}
+.indProduction {
+  position: absolute;
+  /*	top: 17px;
+        left: 73px;*/
+  color: #000;
+  background-position: left top;
+  height: 15px;
+  width: 25px;
+  overflow: hidden;
+  background-color: lightskyblue;
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: center;
+  font-size: 11px;
+  padding-top: 1px;
+  z-index: 99;
+  cursor: pointer;
+}
+.indSovereignty {
+  position: absolute;
+  /*	top: 17px;
+        left: 73px;*/
+  color: #000;
+  background-position: left top;
+  height: 15px;
+  width: 25px;
+  overflow: hidden;
+  background-color: lightgreen;
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: center;
+  font-size: 11px;
+  padding-top: 1px;
+  z-index: 99;
+  cursor: pointer;
+}
+.indpcr {
+  position: absolute;
+  /*	top: 17px;
+        left: 73px;*/
+  color: #000;
+  background-position: left top;
+  height: 15px;
+  width: 25px;
+  overflow: hidden;
+  background-color: goldenrod;
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: center;
+  font-size: 11px;
+  padding-top: 1px;
+  z-index: 99;
+  cursor: pointer;
+}
+.claim {
+  background-color: goldenrod;
+}
+.struct {
+  background-color: lightgreen;
+}
+.army {
+  background-color: lightblue;
+}
+.simg {
+  width: 24px;
+  height: 24px;
+}
+
+nav {
+  display: block;
+  /*	text-align: center;*/
+  cursor: pointer;
+}
+nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nav img {
+  display: block;
+  background-image: url("https://assets.illyriad.net/img/backgrounds/paper2.jpg");
+
+  /*			background: #111; */
+  color: #fff;
+  text-decoration: none;
+  padding: 10px 8px;
+  text-transform: uppercase;
+  font-size: 80%;
+  text-shadow: 0 -1px 0 #000;
+  position: relative;
+}
+
+/*.nav a {
+	display:block; 
+	background: #111; 
+	color:#fff; 
+	text-decoration: none;
+	padding: .8em 1.8em;
+	text-transform: uppercase;
+		font-size: 80%;letter-spacing: 2px;
+	font-size: 80%;
+	text-shadow: 0 -1px 0 #000;
+	position: relative;
+}*/
+.nav span {
+  display: block;
+  background: #111;
+  color: #fff;
+  text-decoration: none;
+  padding: 0.8em 1.8em;
+  text-transform: uppercase;
+  /*	font-size: 80%;letter-spacing: 2px;*/
+  font-size: 80%;
+  text-shadow: 0 -1px 0 #000;
+  position: relative;
+}
+.nav {
+  vertical-align: top;
+  display: inline-block;
+  box-shadow: 1px -1px -1px 1px #000, -1px 1px -1px 1px #fff, 0 0 6px 3px #fff;
+  border-radius: 6px;
+}
+.nav li {
+  position: relative;
+}
+.nav > li {
+  float: left;
+  border-bottom: 4px #aaa solid;
+  margin-right: 1px;
+}
+.nav > li > span {
+  margin-bottom: 1px;
+  box-shadow: inset 0 2em 0.33em -0.5em #555;
+}
+.nav > li:hover,
+.nav > li:hover > span {
+  border-bottom-color: orange;
+}
+.nav li:hover > span {
+  color: orange;
+}
+.nav > li:first-child {
+  border-radius: 4px 0 0 4px;
+}
+.nav > li:first-child > span {
+  border-radius: 4px 0 0 0;
+}
+.nav > li:last-child {
+  border-radius: 0 0 4px 0;
+  margin-right: 0;
+}
+.nav > li:last-child > span {
+  border-radius: 0 4px 0 0;
+}
+.nav li li span {
+  margin-top: 1px;
+}
+
+.nav li span:first-child:nth-last-child(2):before {
+  content: "";
+  position: absolute;
+  height: 0;
+  width: 0;
+  border: 5px solid transparent;
+  top: 50%;
+  right: 5px;
+}
+
+/* submenu positioning*/
+.nav ul {
+  position: absolute;
+  /*	white-space: nowrap;*/
+  border-bottom: 5px solid orange;
+  z-index: 1;
+  left: -99999em;
+}
+.nav > li:hover > ul {
+  left: auto;
+  padding-top: 5px;
+  min-width: 100%;
+}
+.nav > li li ul {
+  border-left: 1px solid #fff;
+}
+
+.nav > li li:hover > ul {
+  /* margin-left: 1px */
+  left: 100%;
+  top: -1px;
+}
+/* arrow hover styling */
+.nav > li > span:first-child:nth-last-child(2):before {
+  border-top-color: #aaa;
+}
+.nav > li:hover > a:first-child:nth-last-child(2):before {
+  border: 5px solid transparent;
+  border-bottom-color: orange;
+  margin-top: -5px;
+}
+.nav li li > a:first-child:nth-last-child(2):before {
+  border-left-color: #aaa;
+  margin-top: -5px;
+}
+.nav li li:hover > a:first-child:nth-last-child(2):before {
+  border: 5px solid transparent;
+  border-right-color: orange;
+  right: 10px;
+}
+
+/* CSS Tree menu styles */
+ol.tree {
+  padding: 0 0 0 30px;
+  width: 300px;
+}
+ol.tree li {
+  position: relative;
+  margin-left: -15px;
+  list-style: none;
+}
+ol.tree li.file {
+  margin-left: -1px !important;
+}
+ol.tree li.file a {
+  background: url(../images/document.png) 0 0 no-repeat;
+  color: blue;
+  padding-left: 21px;
+  text-decoration: none;
+  display: block;
+}
+li.file a[href*=".pdf"] {
+  background: url(document.png) 0 0 no-repeat;
+}
+li.file a[href*=".html"] {
+  background: url(document.png) 0 0 no-repeat;
+}
+li.file a[href$=".css"] {
+  background: url(document.png) 0 0 no-repeat;
+}
+li.file a[href$=".js"] {
+  background: url(document.png) 0 0 no-repeat;
+}
+ol.tree li input {
+  position: absolute;
+  left: 0;
+  margin-left: 0;
+  opacity: 0;
+  z-index: 2;
+  cursor: pointer;
+  height: 1em;
+  width: 1em;
+  top: 0;
+}
+ol.tree li input + ol {
+  background: url(../images/toggle-small-expand.png) 40px 0 no-repeat;
+  margin: -0.938em 0 0 -44px; /* 15px */
+  height: 1em;
+}
+ol.tree li input + ol > li {
+  display: none;
+  margin-left: -14px !important;
+  padding-left: 1px;
+}
+ol.tree li label {
+  background: url(../images/folder-horizontal.png) 15px 1px no-repeat;
+  cursor: pointer;
+  display: block;
+  padding-left: 37px;
+}
+
+ol.tree li input:checked + ol {
+  background: url(../images/toggle-small.png) 40px 5px no-repeat;
+  margin: -1.25em 0 0 -44px; /* 20px */
+  padding: 1.563em 0 0 80px;
+  height: auto;
+}
+ol.tree li input:checked + ol > li {
+  display: block;
+  margin: 0 0 0.125em; /* 2px */
+}
+ol.tree li input:checked + ol > li:last-child {
+  margin: 0 0 0.063em; /* 1px */
+}
