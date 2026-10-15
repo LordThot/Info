@@ -1,0 +1,445 @@
+/* These are the CSS variables used for setting the various colours used in the chats */
+/* Need to find and add in NAP, Confed, War, friend & alliance member colours */
+:root {
+  --name_test: #704406;
+  --name_def: #704406;
+  --name_curr: #704406;
+
+  --nameYou_test: #000000;
+  --nameYou_def: #000000;
+  --nameYou_curr: #000000;
+
+  --nameGM_test: #0000ff;
+  --nameGM_def: #0000ff;
+  --nameGM_curr: #0000ff;
+
+  --nameMod_test: #008000;
+  --nameMod_def: #008000;
+  --nameMod_curr: #008000;
+
+  --nameSystem_test: #ff0000;
+  --nameSystem_def: #ff0000;
+  --nameSystem_curr: #ff0000;
+
+  --nameFriend_def: #513f67;
+  --nameFriend_curr: #513f67;
+  --nameFriend_test: #513f67;
+
+  --bkg_test: #ece9ce;
+  --bkg_def: #ece9ce;
+  --bkg_curr: #ece9ce;
+
+  --mentions_test: #8315184d;
+  --mentions_def: #8315184d;
+  --mentions_curr: #8315184d;
+
+  --trivia_test: #ffff00;
+  --trivia_def: #ffff00;
+  --trivia_curr: #ffff00;
+
+  --time_test: #606060;
+  --time_def: #606060;
+  --time_curr: #606060;
+
+  --text_test: #000000;
+  --text_def: #000000;
+  --text_curr: #000000;
+
+  --diploAlliance_test: #0000ff;
+  --diploAlliance_def: #0000ff;
+  --diploAlliance_curr: #0000ff;
+
+  --diploWar_test: #ff0000;
+  --diploWar_def: #ff0000;
+  --diploWar_curr: #ff0000;
+
+  --diploConfed_test: #00ff00;
+  --diploConfed_def: #00ff00;
+  --diploConfed_curr: #00ff00;
+
+  --diploNap_test: #ffff00;
+  --diploNap_def: #ffff00;
+  --diploNap_curr: #ffff00;
+}
+#gcTest,
+#gcDef,
+#gcCurr {
+  & div.ui-dialog {
+    padding: 0;
+    border-width: 8px 6px;
+    -moz-border-image: url(/img/backgrounds/border_tiny.png) 8 6 stretch;
+    -webkit-border-image: url(/img/backgrounds/border_tiny.png) 8 6 stretch;
+    -o-border-image: url(/img/backgrounds/border_tiny.png) 8 6 stretch;
+    border-image: url(/img/backgrounds/border_tiny.png) 8 6 stretch;
+    background-image: none;
+    border-color: brown;
+    border-style: ridge;
+  }
+}
+#chats {
+  width: 600px;
+  height: auto;
+}
+#gcTest {
+  border: solid 5px red;
+  border-style: ridge;
+}
+#gcTest.globalChatTest {
+  color: var(--text_test);
+
+  & div.mentions {
+    background-color: var(--mentions_test) !important;
+    border-bottom: 1px solid #9a9a9a;
+  }
+  & div.trivia {
+    background-color: var(--trivia_test) !important;
+    border-bottom: 1px solid #9a9a9a;
+  }
+  & > div.oddeven:nth-child(odd) {
+    background-color: var(--bkg_test);
+  }
+  & > div.oddeven:nth-child(even) {
+    background-color: hsl(from var(--bkg_test) h s calc(l - 10));
+  }
+  & div.diploAlliance {
+    border-left: 4px solid var(--diploAlliance_test);
+  }
+  & div.diploWar {
+    border-left: 4px solid var(--diploWar_test);
+  }
+  & div.diploConfed {
+    border-left: 4px solid var(--diploConfed_test);
+  }
+  & div.diploNap {
+    border-left: 4px solid var(--diploNap_test);
+  }
+
+  & .time {
+    color: var(--time_test);
+  }
+  & .name {
+    color: var(--name_test);
+  }
+  & .nameYou {
+    color: var(--nameYou_test);
+  }
+  & .nameFriend {
+    color: var(--nameFriend_test);
+  }
+  & .nameGM {
+    color: var(--nameGM_test);
+  }
+  & .nameMod {
+    color: var(--nameMod_test);
+  }
+  & .nameSystem {
+    color: var(--nameSystem_test);
+  }
+}
+#gcDef {
+  border: solid 5px blue;
+  border-style: ridge;
+}
+#gcDef.globalChatDef {
+  color: var(--text_def);
+
+  & div.mentions {
+    background-color: var(--mentions_def) !important;
+    border-bottom: 1px solid #9a9a9a;
+  }
+  & div.trivia {
+    background-color: var(--trivia_def) !important;
+    border-bottom: 1px solid #9a9a9a;
+  }
+  & > div.oddeven:nth-child(odd) {
+    background-color: var(--bkg_def);
+  }
+  & > div.oddeven:nth-child(even) {
+    background-color: hsl(from var(--bkg_def) h s calc(l - 10));
+  }
+  & div.diploAlliance {
+    border-left: 4px solid var(--diploAlliance_def);
+  }
+  & div.diploWar {
+    border-left: 4px solid var(--diploWar_def);
+  }
+  & div.diploConfed {
+    border-left: 4px solid var(--diploConfed_def);
+  }
+  & div.diploNap {
+    border-left: 4px solid var(--diploNap_def);
+  }
+
+  & .time {
+    color: var(--time_def);
+  }
+  & .name {
+    color: var(--name_def);
+  }
+  & .nameYou {
+    color: var(--nameYou_def);
+  }
+  & .nameFriend {
+    color: var(--nameFriend_def);
+  }
+  & .nameGM {
+    color: var(--nameGM_def);
+  }
+  & .nameMod {
+    color: var(--nameMod_def);
+  }
+  & .nameSystem {
+    color: var(--nameSystem_def);
+  }
+}
+#gcCurr {
+  border: solid 5px green;
+  border-style: ridge;
+}
+#gcCurr.globalChatCurr {
+  color: var(--text_curr);
+
+  & div.mentions {
+    background-color: var(--mentions_curr) !important;
+    border-bottom: 1px solid #9a9a9a;
+  }
+  & div.trivia {
+    background-color: var(--trivia_curr) !important;
+    border-bottom: 1px solid #9a9a9a;
+  }
+  & > div.oddeven:nth-child(odd) {
+    background-color: var(--bkg_curr);
+  }
+  & > div.oddeven:nth-child(even) {
+    background-color: hsl(from var(--bkg_curr) h s calc(l - 10));
+  }
+  & div.diploAlliance {
+    border-left: 4px solid var(--diploAlliance_curr);
+  }
+  & div.diploWar {
+    border-left: 4px solid var(--diploWar_curr);
+  }
+  & div.diploConfed {
+    border-left: 4px solid var(--diploConfed_curr);
+  }
+  & div.diploNap {
+    border-left: 4px solid var(--diploNap_curr);
+  }
+
+  & .time {
+    color: var(--time_curr);
+  }
+  & .name {
+    color: var(--name_curr);
+  }
+  & .nameYou {
+    color: var(--nameYou_curr);
+  }
+  & .nameFriend {
+    color: var(--nameFriend_curr);
+  }
+  & .nameGM {
+    color: var(--nameGM_curr);
+  }
+  & .nameMod {
+    color: var(--nameMod_curr);
+  }
+  & .nameSystem {
+    color: var(--nameSystem_curr);
+  }
+}
+#chatTheme {
+  display: flex;
+}
+#chats > div {
+  max-height: 87%;
+}
+
+#colors {
+  width: 600px;
+  border: ridge brown;
+  margin-inline: 3px;
+  & #textTab,
+  #rolesTab,
+  #bkgsTab,
+  #diploTab {
+    display: flex;
+    flex-flow: wrap;
+  }
+  & fieldset.role {
+    width: 65px;
+  }
+  & button {
+    background-image: none;
+    background-color: darkgreen;
+    color: palegreen;
+    width: 12ch;
+    margin: 3px !important;
+    border-radius: 5px;
+  }
+}
+
+.role {
+  & input {
+    width: 70px;
+    display: block;
+  }
+  & label {
+    display: block;
+  }
+  & label > span {
+    height: 35px;
+    /* text-align: center; */
+    display: inline-block;
+  }
+  & label > span.c2 {
+    height: auto;
+  }
+}
+.c,
+.c2 {
+  width: 100%;
+  text-align: center;
+}
+
+/* CSS for toggle switch start */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 90px;
+  height: 40px;
+  top: 0px;
+}
+
+.switch input {
+  display: none;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 6px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: darkgreen;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+  height: 40px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 6px;
+  /*! bottom: 5px; */
+  background-color: white;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background-color: darkgreen;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196f3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(55px);
+  -ms-transform: translateX(55px);
+  transform: translateX(55px);
+}
+
+/*------ ADDED CSS ---------*/
+#colorSettings {
+  & .on {
+    display: none;
+  }
+
+  & .on,
+  .off {
+    color: palegreen;
+    position: absolute;
+    transform: translate(-50%, -50%);
+    top: 25%;
+    left: 50%;
+    font-size: 10px;
+    font-family: Verdana, sans-serif;
+  }
+
+  & input:checked + .slider .on {
+    display: block;
+  }
+
+  & input:checked + .slider .off {
+    display: none;
+  }
+}
+/*--------- END --------*/
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+/* CSS for toggle switch end */
+
+/* .globalChat.oddeven,.allianceChat.oddeven,.whisperContent {
+	& > div {
+		color: var(--text_curr);
+	}
+	& > div:nth-child(2n) {
+		background-color: hsl(from var(--bkg_curr) h s calc(l - 10));
+	}
+	& > div:nth-child(2n+1) {
+		background-color: var(--bkg_curr);
+	}
+	 & div.mentions {
+    background-color: var(--mentions_curr) !important;
+    border-bottom: 1px solid #9a9a9a;
+  }
+	 & div.trivia {
+    background-color: var(--trivia_curr) !important;
+    border-bottom: 1px solid #9a9a9a;
+  }
+	& .time {
+		color: var(--time_curr);
+	}
+	& .name {
+		color: var(--name_curr);
+	}
+		& .nameYou {
+		color: var(--nameYou_curr);
+	}
+		& .nameFriend {
+		color: var(--nameFriend_curr);
+	}
+	& .nameGM {
+		color: var(--nameGM_curr);
+	}
+	& .nameSystem {
+		color: var(--nameSystem_curr);
+	}
+	& .nameMod {
+		color: var(--nameMod_curr);
+	}
+	& div.diploAlliance {
+		border-left: 4px solid var(--diploAlliance_curr);
+	}
+	& div.diploNap {
+		border-left: 4px solid var(--diploNap_curr);
+	}
+	& div.diploConfed {
+		border-left: 4px solid var(--diploConfed_curr);
+	}
+	& div.diploWar {
+		border-left: 4px solid var(--diploWar_curr);
+	}
+} */
