@@ -1,0 +1,16 @@
+dtprofutils = function(){
+  dt.profBackup = function(){
+  var profContents = document.querySelector("textArea.cke_source").value;
+  console.log(profContents);
+      var key = PlayerId + ':profile';
+      locStorage.setItem(key, JSON.stringify(profContents));
+
+    return profContents;
+  }
+
+  dt.profRestore = function(){
+      var profContents = document.querySelector("textArea.cke_source");
+      var key = PlayerId + ':profile';
+      profContents.value = JSON.parse(locStorage.getItem(PlayerId + ':profile'));
+  }
+}
