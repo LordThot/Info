@@ -1,0 +1,115 @@
+:root {
+  --name_test: #704406;
+  --name_def: #704406;
+  --name_curr: #704406;
+
+  --nameYou_test: #000000;
+  --nameYou_def: #000000;
+  --nameYou_curr: #000000;
+
+  --nameGM_test: #0000ff;
+  --nameGM_def: #0000ff;
+  --nameGM_curr: #0000ff;
+
+  --nameMod_test: #008000;
+  --nameMod_def: #008000;
+  --nameMod_curr: #008000;
+
+  --nameSystem_test: #ff0000;
+  --nameSystem_def: #ff0000;
+  --nameSystem_curr: #ff0000;
+
+  --nameFriend_def: #513f67;
+  --nameFriend_curr: #513f67;
+  --nameFriend_test: #513f67;
+
+  --bkg_test: #ece9ce;
+  --bkg_def: #ece9ce;
+  --bkg_curr: #ece9ce;
+
+  --mentions_test: #8315184d;
+  --mentions_def: #8315184d;
+  --mentions_curr: #8315184d;
+
+  --trivia_test: #ffff00;
+  --trivia_def: #ffff00;
+  --trivia_curr: #ffff00;
+
+  --time_test: #606060;
+  --time_def: #606060;
+  --time_curr: #606060;
+
+  --text_test: #000000;
+  --text_def: #000000;
+  --text_curr: #000000;
+
+  --diploAlliance_test: #0000ff;
+  --diploAlliance_def: #0000ff;
+  --diploAlliance_curr: #0000ff;
+
+  --diploWar_test: #ff0000;
+  --diploWar_def: #ff0000;
+  --diploWar_curr: #ff0000;
+
+  --diploConfed_test: #00ff00;
+  --diploConfed_def: #00ff00;
+  --diploConfed_curr: #00ff00;
+
+  --diploNap_test: #ffff00;
+  --diploNap_def: #ffff00;
+  --diploNap_curr: #ffff00;
+}
+.globalChat.oddeven,
+.allianceChat.oddeven,
+.whisperContent {
+  & > div {
+    color: var(--text_curr);
+  }
+  & > div:nth-child(2n) {
+    background-color: hsl(from var(--bkg_curr) h s calc(l - 10));
+  }
+  & > div:nth-child(2n + 1) {
+    background-color: var(--bkg_curr);
+  }
+  & div.mentions {
+    background-color: var(--mentions_curr) !important;
+    border-bottom: 1px solid #9a9a9a;
+  }
+  & div.trivia {
+    background-color: var(--trivia_curr) !important;
+    border-bottom: 1px solid #9a9a9a;
+  }
+  & .time {
+    color: var(--time_curr);
+  }
+  & .name {
+    color: var(--name_curr);
+  }
+  & .nameYou {
+    color: var(--nameYou_curr);
+  }
+  & .nameFriend {
+    color: var(--nameFriend_curr);
+  }
+  & .nameGM {
+    color: var(--nameGM_curr);
+  }
+  & .nameSystem {
+    color: var(--nameSystem_curr);
+  }
+  & .nameMod {
+    color: var(--nameMod_curr);
+  }
+  & div.diploAlliance {
+    border-left: 4px solid var(--diploAlliance_curr);
+  }
+  & div.diploNap {
+    border-left: 4px solid var(--diploNap_curr);
+  }
+  & div.diploConfed {
+    border-left: 4px solid var(--diploConfed_curr);
+  }
+  & div.diploWar {
+    border-left: 4px solid var(--diploWar_curr);
+  }
+}
