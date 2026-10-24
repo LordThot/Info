@@ -1,0 +1,57 @@
+function initialize() {
+//	console.log("background_script - initialize: initialize called...");
+	/*
+	* This function has several things to do:
+	*	1. Set up monitoring of the local storage for changes.
+	*	2. Set up alarms that will check any valid keys for new notifications every 10 mins.
+	*/
+	
+	chrome.browserAction.onClicked.addListener(openIMM);
+	chrome.storage.onChanged.addListener(logStorageChange);
+	chrome.alarms.onAlarm.addListener(regularCheck);
+	chrome.alarms.create('regularCheck', {periodInMinutes: 10});
+	regularCheck(); 
+	doBadge();
+}
+// =======================================================================================
+function regularCheck(){
+	chrome.storage.local.get(null,function(results){
+		for (monitor in results){
+			getMailList(results[monitor]);
+		}
+	});
+}
+// =======================================================================================
+	function openIMM() {
+// ========================================================================================
+		var queryInfo = {};
+		chrome.tabs.query(queryInfo, function(tabs) {
+			let found = -1;
+			for(let i = 0;i<tabs.length;i++){
+				if(tabs[i].title.endsWith("Illy Mail API Interface")){
+					found = tabs[i].id;
+				}
+			}
+			if(found > -1){
+				chrome.tabs.update(found, {active:true});
+			}else{
+				chrome.tabs.create({"url": "/imm.html"});
+			}
+		});
+// ========================================================================================
+	}
+	
+chrome.runtime.onInstalled.addListener(async ({ reason, }) => {
+	switch (reason) {
+		case "install": {
+			const url = chrome.runtime.getURL("welcomePage/installed.html");
+			await chrome.tabs.create({ url, });
+		} break;
+		case "update": {
+			const url = chrome.runtime.getURL("updatePage/updated.html");
+			await chrome.tabs.create({ url, });
+		} break;
+	}
+});
+	
+initialize();
