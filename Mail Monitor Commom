@@ -1,0 +1,39 @@
+/*
+* Common functions that may be needed in various places/pages
+*/
+
+/*
+* Remove all occurences of item from array arr.
+*/
+function remove(arr, item) {
+    for (var i = arr.length; i--;) {
+        if (arr[i] === item) {
+            arr.splice(i, 1);
+        }
+    }
+	return arr;
+}
+/*
+* Deal with changes to the stored data.
+*/
+function logStorageChange(changes, area) {
+	var changedItems = Object.keys(changes);
+	doBadge();
+}
+
+function doBadge(){
+	chrome.storage.local.get(null,function(results){
+	// Set the count of all new notifications to 0;
+	var newCount = 0;
+	// Get a list of actual monitor ids (remove the settings).
+	let keys = remove(Object.keys(results),"settings");
+		for (k=0;k<keys.length;k++){
+			var monitor = results[keys[k]];
+				newCount = newCount + monitor.newM;
+			bt = newCount.toString();
+			chrome.browserAction.setBadgeText({text: bt});
+		}
+		bt = newCount.toString();
+		chrome.browserAction.setBadgeText({text: bt});
+	});
+}
