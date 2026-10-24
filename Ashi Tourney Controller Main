@@ -1,0 +1,327 @@
+// ==UserScript==
+// @name         Ashi's Tournament Controller
+// @namespace    https://ashi.land/
+// @version      3.1.1
+// @description  Tournament complete â€” thank you for using Ashi's Tournament Controller.
+// @icon         https://assets.illyriad.net/img/medals/base/dragon-2-gold.png
+// @icon64       https://assets.illyriad.net/img/medals/base/dragon-2-gold.png
+// @match        https://elgea.illyriad.co.uk/*
+// @require      https://ashi.land/assets/atc/8f7c2e/atc-catalogue-3.1.0.js
+// @require      https://ashi.land/assets/atc/8f7c2e/atc-core-3.1.0.js
+// @updateURL    https://ashi.land/scripts/ashis-tournament-controller.user.js
+// @downloadURL  https://ashi.land/scripts/ashis-tournament-controller.user.js
+// @grant        none
+// @run-at       document-idle
+// ==/UserScript==
+
+(function () {
+    'use strict';
+
+    const ROOT_ID = 'ashi-tournament-controller-retired';
+    const PATCH_STYLE_ID = 'ashi-tournament-controller-retired-v311-styles';
+
+    function installPatchStyles() {
+        if (document.getElementById(PATCH_STYLE_ID)) return;
+
+        const style = document.createElement('style');
+        style.id = PATCH_STYLE_ID;
+        style.textContent = `
+            #${ROOT_ID} {
+                transform: none !important;
+                min-width: 310px;
+                min-height: 285px;
+                max-width: calc(100vw - 16px);
+                max-height: calc(100vh - 16px);
+                overflow: hidden !important;
+            }
+
+            #${ROOT_ID} .atc-retired-header {
+                cursor: move;
+                user-select: none;
+            }
+
+            #${ROOT_ID} .atc-retired-body {
+                height: calc(100% - 42px);
+                overflow: auto;
+            }
+
+            #${ROOT_ID} .atc-retired-uninstall {
+                margin-top: 13px;
+                color: #73501f;
+                font-size: 13px;
+                line-height: 1.45;
+            }
+
+            #${ROOT_ID}.atc-retired-minimised {
+                width: 74px !important;
+                height: 74px !important;
+                min-width: 74px !important;
+                min-height: 74px !important;
+                max-width: 74px !important;
+                max-height: 74px !important;
+                border-radius: 50% !important;
+                overflow: visible !important;
+                cursor: pointer;
+            }
+
+            #${ROOT_ID}.atc-retired-minimised .atc-retired-header,
+            #${ROOT_ID}.atc-retired-minimised .atc-retired-body > *:not(.atc-retired-medal),
+            #${ROOT_ID}.atc-retired-minimised .atc-resize-handle {
+                display: none !important;
+            }
+
+            #${ROOT_ID}.atc-retired-minimised .atc-retired-body {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                height: 100%;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+
+            #${ROOT_ID}.atc-retired-minimised .atc-retired-medal {
+                display: block !important;
+                width: 66px !important;
+                height: 66px !important;
+                margin: 0 !important;
+                cursor: pointer;
+                filter: drop-shadow(0 3px 6px rgba(0,0,0,.3));
+            }
+
+            #${ROOT_ID} .atc-resize-handle {
+                position: absolute;
+                z-index: 8;
+            }
+
+            #${ROOT_ID} .atc-resize-n,
+            #${ROOT_ID} .atc-resize-s {
+                left: 12px;
+                right: 12px;
+                height: 8px;
+                cursor: ns-resize;
+            }
+
+            #${ROOT_ID} .atc-resize-n { top: -4px; }
+            #${ROOT_ID} .atc-resize-s { bottom: -4px; }
+
+            #${ROOT_ID} .atc-resize-e,
+            #${ROOT_ID} .atc-resize-w {
+                top: 12px;
+                bottom: 12px;
+                width: 8px;
+                cursor: ew-resize;
+            }
+
+            #${ROOT_ID} .atc-resize-e { right: -4px; }
+            #${ROOT_ID} .atc-resize-w { left: -4px; }
+
+            #${ROOT_ID} .atc-resize-ne,
+            #${ROOT_ID} .atc-resize-nw,
+            #${ROOT_ID} .atc-resize-se,
+            #${ROOT_ID} .atc-resize-sw {
+                width: 14px;
+                height: 14px;
+            }
+
+            #${ROOT_ID} .atc-resize-ne { top: -5px; right: -5px; cursor: nesw-resize; }
+            #${ROOT_ID} .atc-resize-nw { top: -5px; left: -5px; cursor: nwse-resize; }
+            #${ROOT_ID} .atc-resize-se { bottom: -5px; right: -5px; cursor: nwse-resize; }
+            #${ROOT_ID} .atc-resize-sw { bottom: -5px; left: -5px; cursor: nesw-resize; }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    function applyPatch(root) {
+        if (!root || root.dataset.v311Patched === '1') return;
+        root.dataset.v311Patched = '1';
+
+        installPatchStyles();
+
+        const rect = root.getBoundingClientRect();
+        root.style.left = `${Math.max(8, rect.left)}px`;
+        root.style.top = `${Math.max(8, rect.top)}px`;
+        root.style.width = `${rect.width}px`;
+        root.style.height = `${rect.height}px`;
+
+        const copy = root.querySelector('.atc-retired-copy');
+        if (copy && !root.querySelector('.atc-retired-uninstall')) {
+            const uninstall = document.createElement('div');
+            uninstall.className = 'atc-retired-uninstall';
+            uninstall.textContent = 'The tournament is now over, so you can safely uninstall this addon from Tampermonkey.';
+            copy.insertAdjacentElement('afterend', uninstall);
+        }
+
+        // Replace the old close/minimise button so its v3.1.0 "remove panel" listener is discarded.
+        const oldButton = root.querySelector('.atc-retired-close');
+        if (oldButton) {
+            const button = oldButton.cloneNode(true);
+            button.title = 'Minimise';
+            button.setAttribute('aria-label', 'Minimise');
+            oldButton.replaceWith(button);
+
+            button.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                root.classList.add('atc-retired-minimised');
+            });
+        }
+
+        const medal = root.querySelector('.atc-retired-medal');
+        if (medal) {
+            medal.addEventListener('click', event => {
+                if (!root.classList.contains('atc-retired-minimised')) return;
+                event.preventDefault();
+                event.stopPropagation();
+                root.classList.remove('atc-retired-minimised');
+            });
+        }
+
+        // Dragging from the header.
+        const header = root.querySelector('.atc-retired-header');
+        if (header) {
+            header.addEventListener('pointerdown', event => {
+                if (event.button !== 0 || event.target.closest('button')) return;
+
+                const startRect = root.getBoundingClientRect();
+                const startX = event.clientX;
+                const startY = event.clientY;
+
+                header.setPointerCapture?.(event.pointerId);
+
+                const onMove = moveEvent => {
+                    const maxLeft = Math.max(8, window.innerWidth - root.offsetWidth - 8);
+                    const maxTop = Math.max(8, window.innerHeight - root.offsetHeight - 8);
+                    root.style.left = `${Math.min(maxLeft, Math.max(8, startRect.left + moveEvent.clientX - startX))}px`;
+                    root.style.top = `${Math.min(maxTop, Math.max(8, startRect.top + moveEvent.clientY - startY))}px`;
+                };
+
+                const onUp = () => {
+                    window.removeEventListener('pointermove', onMove);
+                    window.removeEventListener('pointerup', onUp);
+                    window.removeEventListener('pointercancel', onUp);
+                };
+
+                window.addEventListener('pointermove', onMove);
+                window.addEventListener('pointerup', onUp);
+                window.addEventListener('pointercancel', onUp);
+            });
+        }
+
+        // Also allow the minimised medal to be dragged.
+        if (medal) {
+            medal.addEventListener('pointerdown', event => {
+                if (!root.classList.contains('atc-retired-minimised') || event.button !== 0) return;
+
+                const startRect = root.getBoundingClientRect();
+                const startX = event.clientX;
+                const startY = event.clientY;
+                let moved = false;
+
+                const onMove = moveEvent => {
+                    if (Math.abs(moveEvent.clientX - startX) > 3 || Math.abs(moveEvent.clientY - startY) > 3) moved = true;
+                    const maxLeft = Math.max(8, window.innerWidth - root.offsetWidth - 8);
+                    const maxTop = Math.max(8, window.innerHeight - root.offsetHeight - 8);
+                    root.style.left = `${Math.min(maxLeft, Math.max(8, startRect.left + moveEvent.clientX - startX))}px`;
+                    root.style.top = `${Math.min(maxTop, Math.max(8, startRect.top + moveEvent.clientY - startY))}px`;
+                };
+
+                const onUp = upEvent => {
+                    window.removeEventListener('pointermove', onMove);
+                    window.removeEventListener('pointerup', onUp);
+                    window.removeEventListener('pointercancel', onUp);
+
+                    if (moved) {
+                        upEvent.preventDefault();
+                        upEvent.stopPropagation();
+                    }
+                };
+
+                window.addEventListener('pointermove', onMove);
+                window.addEventListener('pointerup', onUp, { once: true });
+                window.addEventListener('pointercancel', onUp, { once: true });
+            });
+        }
+
+        const directions = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
+
+        directions.forEach(direction => {
+            const handle = document.createElement('div');
+            handle.className = `atc-resize-handle atc-resize-${direction}`;
+            root.appendChild(handle);
+
+            handle.addEventListener('pointerdown', event => {
+                if (root.classList.contains('atc-retired-minimised') || event.button !== 0) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                const startRect = root.getBoundingClientRect();
+                const startX = event.clientX;
+                const startY = event.clientY;
+                const minW = 310;
+                const minH = 285;
+
+                const onMove = moveEvent => {
+                    let left = startRect.left;
+                    let top = startRect.top;
+                    let width = startRect.width;
+                    let height = startRect.height;
+
+                    const dx = moveEvent.clientX - startX;
+                    const dy = moveEvent.clientY - startY;
+
+                    if (direction.includes('e')) width = Math.max(minW, startRect.width + dx);
+                    if (direction.includes('s')) height = Math.max(minH, startRect.height + dy);
+
+                    if (direction.includes('w')) {
+                        width = Math.max(minW, startRect.width - dx);
+                        left = startRect.right - width;
+                    }
+
+                    if (direction.includes('n')) {
+                        height = Math.max(minH, startRect.height - dy);
+                        top = startRect.bottom - height;
+                    }
+
+                    left = Math.max(8, left);
+                    top = Math.max(8, top);
+                    width = Math.min(width, window.innerWidth - left - 8);
+                    height = Math.min(height, window.innerHeight - top - 8);
+
+                    root.style.left = `${left}px`;
+                    root.style.top = `${top}px`;
+                    root.style.width = `${width}px`;
+                    root.style.height = `${height}px`;
+                };
+
+                const onUp = () => {
+                    window.removeEventListener('pointermove', onMove);
+                    window.removeEventListener('pointerup', onUp);
+                    window.removeEventListener('pointercancel', onUp);
+                };
+
+                window.addEventListener('pointermove', onMove);
+                window.addEventListener('pointerup', onUp);
+                window.addEventListener('pointercancel', onUp);
+            });
+        });
+    }
+
+    function findAndPatch() {
+        const root = document.getElementById(ROOT_ID);
+        if (root) {
+            applyPatch(root);
+            return true;
+        }
+        return false;
+    }
+
+    if (!findAndPatch()) {
+        const observer = new MutationObserver(() => {
+            if (findAndPatch()) observer.disconnect();
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+    }
+})();
