@@ -1,0 +1,160 @@
+(function () {
+    'use strict';
+
+    const VERSION = '3.1.0';
+    const APP_ID = 'ashi-tournament-controller-retired';
+    const MEDAL_URL = 'https://assets.illyriad.net/img/medals/base/dragon-2-gold.png';
+
+    function installStyles() {
+        if (document.getElementById(`${APP_ID}-styles`)) return;
+
+        const style = document.createElement('style');
+        style.id = `${APP_ID}-styles`;
+        style.textContent = `
+            #${APP_ID} {
+                position: fixed;
+                z-index: 2147483000;
+                left: 50%;
+                top: 110px;
+                transform: translateX(-50%);
+                box-sizing: border-box;
+                width: min(430px, calc(100vw - 32px));
+                overflow: hidden;
+                border: 1px solid #8f7654;
+                border-radius: 9px;
+                background: #efe1c5;
+                color: #4a331f;
+                box-shadow: 0 6px 22px rgba(0,0,0,.32);
+                font-family: Arial, Helvetica, sans-serif;
+                text-align: center;
+            }
+
+            #${APP_ID} * {
+                box-sizing: border-box;
+            }
+
+            #${APP_ID} .atc-retired-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                min-height: 42px;
+                padding: 7px 9px 7px 13px;
+                border-bottom: 1px solid #b89b70;
+                background: #e6d1ab;
+            }
+
+            #${APP_ID} .atc-retired-title {
+                min-width: 0;
+                color: #4a321e;
+                font-family: Georgia, "Times New Roman", serif;
+                font-size: 17px;
+                font-weight: 700;
+                text-align: left;
+            }
+
+            #${APP_ID} .atc-retired-version {
+                margin-left: auto;
+                padding: 0 9px;
+                color: #8a7357;
+                font-size: 10px;
+                white-space: nowrap;
+            }
+
+            #${APP_ID} .atc-retired-close {
+                width: 31px;
+                height: 28px;
+                flex: 0 0 31px;
+                padding: 0;
+                border: 1px solid #a48761;
+                border-radius: 5px;
+                background: #f5ead5;
+                color: #60472e;
+                font: 17px/24px Arial, sans-serif;
+                cursor: pointer;
+            }
+
+            #${APP_ID} .atc-retired-body {
+                padding: 25px 28px 27px;
+            }
+
+            #${APP_ID} .atc-retired-medal {
+                display: block;
+                width: 142px;
+                height: 142px;
+                object-fit: contain;
+                margin: 0 auto 17px;
+                filter: drop-shadow(0 4px 8px rgba(0,0,0,.24));
+            }
+
+            #${APP_ID} .atc-retired-winner {
+                margin: 0 0 14px;
+                color: #73501f;
+                font-family: Georgia, "Times New Roman", serif;
+                font-size: 21px;
+                font-weight: 700;
+                line-height: 1.2;
+            }
+
+            #${APP_ID} .atc-retired-copy {
+                max-width: 340px;
+                margin: 0 auto;
+                color: #66513a;
+                font-size: 14px;
+                line-height: 1.55;
+            }
+
+            #${APP_ID} .atc-retired-thanks {
+                margin-top: 17px;
+                color: #4a331f;
+                font-size: 14px;
+                font-weight: 700;
+            }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    function showRetirementScreen() {
+        if (!document.body || document.getElementById(APP_ID)) return;
+
+        installStyles();
+
+        // Remove the former live ATC panel/launcher if an old page instance left them behind.
+        document.getElementById('ashi-tournament-squares-panel')?.remove();
+        document.getElementById('ashi-tournament-squares-launcher')?.remove();
+
+        const root = document.createElement('div');
+        root.id = APP_ID;
+        root.innerHTML = `
+            <div class="atc-retired-header">
+                <div class="atc-retired-title">ASHI'S TOURNAMENT CONTROLLER</div>
+                <div class="atc-retired-version">v${VERSION}</div>
+                <button type="button" class="atc-retired-close" title="Close" aria-label="Close">−</button>
+            </div>
+
+            <div class="atc-retired-body">
+                <img class="atc-retired-medal" src="${MEDAL_URL}" alt="Gold tournament medal">
+
+                <div class="atc-retired-winner">TOUR finished #1 — we won!</div>
+
+                <div class="atc-retired-copy">
+                    This addon is no longer in use, but I hope it was helpful during the tournament.
+                </div>
+
+                <div class="atc-retired-thanks">Thank you for using it.</div>
+            </div>
+        `;
+
+        root.querySelector('.atc-retired-close').addEventListener('click', () => {
+            root.remove();
+        });
+
+        document.body.appendChild(root);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', showRetirementScreen, { once: true });
+    } else {
+        showRetirementScreen();
+    }
+})();
