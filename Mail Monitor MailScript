@@ -1,0 +1,453 @@
+function mailInitialize(){
+	chrome.storage.local.get(null,function(items){
+		if (chrome.runtime.lastError) {
+			console.error(browser.runtime.lastError);
+		} else {
+			// Remove any monitor buttons in the menu bar
+			let mButtons = document.querySelectorAll("#menuBar button");
+			for(b=0;b<mButtons.length;b++){
+				mButtons[b].remove();
+			}
+			let monitors = remove(Object.keys(items),"settings");
+			let k = Object.keys(monitors);
+			for (key in monitors){
+				// add a button for this key
+				var thisMon = items[monitors[key]];
+				var b = document.createElement("button");
+				let bText = thisMon.pid;
+				if(thisMon.name >""){
+					bText = thisMon.name + "(" + thisMon.pid + ")";
+				}
+				b.innerText = bText;
+				b.dataset.id = thisMon.pid;
+				document.querySelector("#menuBar").appendChild(b);
+			}
+		};
+		document.querySelector("#menuBar").addEventListener("click", (e) => {
+			monitorSelected(e);
+		})
+		document.querySelector("#filterBar").addEventListener("click", (e) => {
+			filterSelected(e);
+		})
+		
+		document.querySelector("#clearM").addEventListener("click", (e) => {
+			confirmClear(e);
+		})
+		document.querySelector("#detailsTbl>tbody").addEventListener("click", (e) => {
+			msgClicked(e);
+		})
+		document.querySelector("#msgClose").addEventListener("click", (e) => {
+			document.querySelector("#singleMsgDiv").classList.add("nosee");
+		})
+		document.querySelector("#msgSave").addEventListener("click", (e) => {
+			saveMsgHtml(e);
+		})
+		document.querySelector("#doSearch").addEventListener("click", (e) => {
+			searchList(e);
+		})
+		document.querySelector("#delMsg").addEventListener("click", (e) => {
+			deleteMsg(e);
+		})
+		document.querySelector("#keepMsg").addEventListener("click", (e) => {
+			document.querySelector("#noMsgDiv").classList.add("nosee");
+		})
+		
+	});
+};
+
+function deleteMsg(e){
+	let mailId = e.target.dataset.id;
+	let s=document.querySelector("#menuBar button.selected");
+	let m = s.dataset.id;
+
+	chrome.storage.local.get(m,function(results){
+		if (chrome.runtime.lastError) {
+			console.error(chrome.runtime.lastError);
+		} else {
+			let monitor = results[m];
+			delete monitor.mails[mailId];
+			chrome.storage.local.set({[monitor.pid]:monitor});
+		}
+	})
+	document.querySelector("#noMsgDiv").classList.add("nosee");
+	var rubbish = "";
+}
+function msgClicked(e){
+	let et = e.target;
+	while(et.localName !== "tr"){
+		et = et.parentElement;
+	}
+	let dSet = et.dataset;
+ 	readMail(dSet.mid,dSet.k);
+ }
+
+function noMessage(o){
+	let tDiv = document.querySelector("#noMsgDiv");
+	var msg = {id: o.id};
+	tDiv.querySelector("p").textContent = o.errormsg;
+	tDiv.querySelector("button").setAttribute("data-id",o.id);
+	tDiv.classList.remove("nosee");
+}
+function showMessage(o){
+	let tDiv = document.querySelector("#singleMsgDiv");
+	var msg = {id: o.id};
+	var subj = parseT2(o.subj);
+	tDiv.querySelector("[name='subj']").textContent = subj;
+	msg.subj = subj;
+	tDiv.querySelector("[name='sName']").textContent = o.sName;
+	msg.sName = o.sName;
+	tDiv.querySelector("[name='rName']").textContent = o.rName;
+	msg.rName = o.rName;
+	tDiv.querySelector("[name='dtg']").textContent = o.dtg;
+	msg.dtg = o.dtg;
+	// Clear the td that holds the body of the message.
+	let bodyTD = tDiv.querySelector("[name='body']");
+	while (bodyTD.hasChildNodes()) {
+		bodyTD.removeChild(bodyTD.lastChild);
+	}
+	var bdy = parseT2(o.body);
+	msg.bdy = bdy;
+	let frag = document.createRange().createContextualFragment(bdy);
+	tDiv.querySelector("[name='body']").appendChild(frag);
+	tDiv.classList.remove("nosee");
+	document.querySelector("#msgSave").setAttribute("data-msg",JSON.stringify(msg));
+}
+
+function saveMsgHtml(e){
+	let data = e.target.dataset.msg;
+	let t = JSON.parse(data).id;
+	filename = t + '.html';
+	data = document.querySelector("#msgTable").innerHTML;
+    var oMyBlob = new Blob([data], {type: 'text/html'}),
+            e = document.createEvent('MouseEvents'),
+            a = document.createElement('a');
+    a.download = filename
+    a.href = window.URL.createObjectURL(oMyBlob)
+    a.dataset.downloadurl = ['text/html', a.download, a.href].join(':')
+    e.initMouseEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null)
+    a.dispatchEvent(e)
+}
+
+function parseT2(t){
+	var startPts=[],endPts=[],i=-1;
+	while((i=t.indexOf("[",i+1)) >= 0) startPts.push(i);
+	while((i=t.indexOf("]",i+1)) >= 0) endPts.push(i);
+	//Step through the start points and extract the section
+	var itmlA = [];
+	var tA = [];
+	if(startPts.length == 0){
+		return t;
+	}else{
+		for(i=0;i<startPts.length;i++){
+			itmlA.push(t.substring(startPts[i],endPts[i]+1));
+		}
+		for(i=0;i<itmlA.length;i++){
+			n=parseITML(itmlA[i]);
+			var tmp = t.split(itmlA[i]);
+			t=tmp.join(n);
+		}
+	}
+	return t;
+}
+
+function confirmClear(event){
+	result = confirm("Are you sure you want to clear these mails? Once gone you will not be able to get them back.");
+	if(result){
+		let m = event.target.dataset.id;
+		mailsClear(m);
+	}
+}
+function mailsClear(m){
+	chrome.storage.local.get(m,function(items){
+		items[m].mails = {};
+		chrome.storage.local.set({[items[m].pid]:items[m]},function(){
+			let tb = document.querySelector("tbody");
+			while(tb.hasChildNodes()){
+			   tb.removeChild(tb.firstChild);
+			}
+		});
+	})
+}
+
+function filterSelected(event){
+	let m = event.target.dataset.id;
+	if(m == "a"){
+		let s=document.querySelectorAll("#filterBar button.selected");
+		for(n=0;n<s.length;n++){
+			s[n].classList.remove('selected');
+		}
+	}
+	if(m !== "s"){
+		let s=document.querySelectorAll("#filterBar button.selected");
+		for(n=0;n<s.length;n++){
+			s[n].classList.remove('selected');
+		}
+		event.target.classList.add("selected");
+	}else{
+		showSearch();
+	}
+}
+
+function showSearch(){
+	document.querySelector("#searchForm").classList.remove("nosee");
+}
+
+function searchList(){
+	var searchRes = document.createElement("tbody");
+	var searchInps = document.querySelectorAll("#sTbl input");
+	var rows = document.querySelectorAll("#detailsTbl tbody tr");
+	for(var r = 0;r < rows.length;r++){
+		var keepMe = true;
+		var tds = rows[r].querySelectorAll("td");
+		// Check the subject field
+		if(searchInps[0].value){
+			if(!tds[3].textContent.includes(searchInps[0].value)){
+				keepMe = false;
+			}
+		}
+		// Check the sender field
+		if(searchInps[1].value){
+			if(!tds[1].textContent.includes(searchInps[1].value)){
+				keepMe = false;
+			}
+		}
+		// Check the reciever field
+		if(searchInps[2].value){
+			if(!tds[2].textContent.includes(searchInps[2].value)){
+				keepMe = false;
+			}
+		}
+		// Check the read field
+		if(searchInps[3].value){
+			if(Number(tds[0].textContent) == searchInps[3].checked){
+				keepMe = false;
+			}
+		}
+		if(keepMe){
+			var nRow = rows[r].cloneNode(true);
+			searchRes.appendChild(nRow);
+		}
+	}
+	// Clear the existing rows in the table
+	var tb = document.querySelector("#detailsTbl tbody")
+	while(tb.hasChildNodes()){
+	   tb.removeChild(tb.firstChild);
+	}
+	var p = tb.parentElement;
+	tb.remove();
+	p.appendChild(searchRes);
+	document.querySelector("#detailsTbl>tbody").addEventListener("click", (e) => {
+		msgClicked(e);
+	})
+	document.querySelector("#searchForm").classList.add("nosee");
+}
+
+function monitorSelected(event){
+	let m = event.target.dataset.id;
+	let s=document.querySelectorAll("#menuBar button.selected");
+	for(n=0;n<s.length;n++){
+		s[n].classList.remove('selected');
+	}
+	event.target.classList.add("selected");
+	let b = document.querySelector("#clearM");
+	b.dataset.id = m;
+	// Get the id of any filter that has been selected.
+	if(!document.querySelector("#filterBar button.selected")){
+		var filterId = -1;
+	}else{
+		var filterId = document.querySelector("#filterBar button.selected").dataset.id;
+		if(filterId == "a"){
+			filterId = -1;
+		}
+	}
+// =======================================================================================
+	try{
+		var loader = document.querySelector("#loader");
+		var loaderMessage = "Reading data and parsing ITML...";
+		loader.querySelectorAll("p")[0].textContent = loaderMessage;
+		loader.className = 'see';
+	}
+	catch (e){
+	}
+// =======================================================================================	
+	chrome.storage.local.get(m,function(results){
+		if (chrome.runtime.lastError) {
+			console.error(chrome.runtime.lastError);
+		} else {
+			let monitor = results[m];
+			monitor.newM = 0;
+			chrome.storage.local.set({[monitor.pid]:monitor});
+			let tb = document.querySelector("#notifsDiv tbody");
+			while(tb.hasChildNodes()){
+			   tb.removeChild(tb.firstChild);
+			}
+			let keys = Object.keys(monitor.mails);
+			keys.reverse();
+			for(i=0;i<keys.length;i++){
+				let thisM = monitor.mails[keys[i]];
+				if (checkFilter(thisM,monitor)){
+					r = tb.insertRow(-1);
+					r.dataset.k = monitor.k;
+					r.dataset.mid = thisM.id;
+					c = r.insertCell(-1);
+					c.textContent = thisM.read;
+					c = r.insertCell(-1);
+					if(thisM.sId == "0"){
+						c.textContent = "System";
+					}else{
+						c.textContent = thisM.sName;
+					}
+					c = r.insertCell(-1);
+					c.textContent = thisM.rName;
+					c = r.insertCell(-1);
+					let n = parseT(thisM.subj);
+					c.appendChild(n);
+					c = r.insertCell(-1);
+					c.textContent = thisM.dtg;
+				}
+			}
+			try{
+			loader.className = 'nosee';
+			}
+			catch (e){
+				console.log(e);
+			}
+
+		};
+	});
+}
+
+function checkFilter(mail,monitor){
+	// Get the id of the checked filter (if any)
+	if(!document.querySelector("#filterBar button.selected")){
+		// No filter selected so show everything.
+		return true;
+	}
+	let filter = document.querySelector("#filterBar button.selected").dataset.id;
+	if(filter === "0"){
+		// Want only sent msgs
+		if(mail.sId === monitor.pid){
+			return true;
+		}
+	}else{
+		if(mail.catId === filter || filter === "a"){
+			return true;
+		}
+	}
+	return false;
+}
+function parseT(t){
+	var startPts=[],endPts=[],i=-1;
+	while((i=t.indexOf("[",i+1)) >= 0) startPts.push(i);
+	while((i=t.indexOf("]",i+1)) >= 0) endPts.push(i);
+	//Step through the start points and extract the section
+	var itmlA = [];
+	var tA = [];
+	if(startPts.length == 0){
+//		tA.push(t);
+		var newEl = document.createElement("span");
+		textEl = document.createTextNode(t);
+		newEl.appendChild(textEl);
+	}else{
+		for(i=0;i<startPts.length;i++){
+			var itml = t.substring(startPts[i],endPts[i]+1);
+			itmlA.push(itml);
+			var txt = t.substring(endPts[i-1]+1,startPts[i]);
+			tA.push(txt);
+		}
+		var newEl = document.createElement("span");
+		for(i=0;i<tA.length;i++){
+			if(tA[i] !==""){
+			textEl = document.createTextNode(tA[i]);
+			newEl.appendChild(textEl);
+			}
+			itmlEl = document.createElement("strong");
+			tc = parseITML(itmlA[i]);
+			itmlEl.textContent = tc;
+			newEl.appendChild(itmlEl);
+		}
+	}
+	return newEl;
+}
+
+function parseITML(s){
+	let type = s.split("=")[0];
+	switch (type){
+		case "[@i":
+		// unit code
+		if(s.split("@")[1].startsWith("i=5|")){
+			name = "";
+			// n=s.split("|")[1].replace("]","");
+			// name = gameUnits[n].name + "(s)";
+		}else{
+			tmp = s.split("@")[1].replace("]","");
+			n = icp[tmp];
+			name = cp[n].n + "(s)";
+//			name = s;
+//			t=t.split(s).join("<b>"+name+"</b>");
+		}
+		break;
+		
+		case "[@t":
+		// town code
+		name = s.split("=")[1].split("|")[0] + " ";
+//		t=t.split(s).join("<b>"+name+"</b>");
+		break;
+		
+		case "[@ts":
+		// possesive town name
+		name=s.split("=")[1].split("|")[0] + "'s";
+//		t=t.split(s).join("<b>"+name+"</b>");
+		break;
+
+		case "[@f":
+		// faction code
+		n = s.split("=")[1].replace("]","");
+		name = factions[n];
+//		t=t.split(s).join("<b>"+name+"</b>");
+		break;
+
+		case "[@fs":
+		// possesive faction code
+		n = s.split("=")[1].replace("]","") + "'s";
+		name = factions[n];
+//		t=t.split(s).join("<b>"+name+"</b>");
+		break;
+
+		case "[@l":
+		// location code
+		parts = s.split("=")[1].split("|");
+		loc = parts[0] + "|" + parts[1];
+		name = loc;
+		if(parts[2]){
+			name = name + " in " + regions[parts[2]];
+		}
+//		t=t.split(s).join("<b>"+loc+"</b>");
+		break;
+		
+		case "[@c":
+		// item code
+		n=s.split("=")[1].replace("]","");
+		name = cp[n].n + "(s)";
+//		name = s;
+//		t=t.split(s).join("<b>"+name+"</b>");
+		break;
+		
+		case "[@ps":
+		// possesive player name
+		if(s.split("=")[1] == "]"){
+			name = s;
+		}else{
+			name=s.split("=")[1].split("|")[0] + "'s";
+//			t=t.split(s).join("<b>"+name+"</b>");
+		}
+		break;
+		
+		case "[@p":
+		// Standard player name
+		name=s.split("=")[1].split("|")[0];
+//		t=t.split(s).join("<b>"+name+"</b>");
+		break;
+	}
+	return name;
+}
