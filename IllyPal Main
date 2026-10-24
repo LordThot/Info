@@ -1,0 +1,100 @@
+if(!Date.now){Date.now=function(){return new Date().getTime();};}
+ip=function(){$('#illypal').remove();this.localTest=false;this.version='v14.06.001'+((this.localTest)?' DEV, LOCAL':'');this.contextHeader=function(parTitle,parZoomLimit){var zoomString='';if(parZoomLimit==null){zoomString=mapData.zoom;}else{zoomString=Math.min(parZoomLimit,mapData.zoom);}
+return'<h3>'+parTitle+': '+mapData.x+'|'+mapData.y
++' (&plusmn;'+zoomString+')'
++', '+$('#serverDate').html()+'</h3>';}
+var
+mapWarn='<p>Open <a href="https://elgea.illyriad.co.uk/#/World/Map">the World Map</a> first!</p>',lf='<br/>',ui='<div id="illypal"><div id="ipT"><ul>'
++'<li><div href="#ipT-exit" style="color: 128,0,0; padding: 0px 6px;" onclick="ip_close();">&times;</div>'
++'<li><a href="#ipT-ab" style="font-weight: normal;">IllyPal</a>'
++'<li><a href="#ipT-th" style="font-weight: normal;">Trade Hubs</a>'
++'<li><a href="#ipT-so" style="font-weight: normal;">Sov</a>'
++'<li><a href="#ipT-mu" style="font-weight: normal;">Moving Diplo/Military</a>'
++'<li><a href="#ipT-re" style="font-weight: normal;">Harvestables</a>'
++'</ul>'
++'<div id="ipT-ab">IllyPal <span style="color: hsla(0,0%,0%,0.6);">'+this.version+'</span> &copy; <span class="data">[@pn=Albatross|42624|mCrow|153|1|0||||0-387-284-60]</span> 2014 | <a href="https://goo.gl/1UFgt" target="_blank">Release Notes</a>.</div>'
++'<div id="ipT-th" style="font-size: 85%; line-height: 95%; overflow-x: hidden;"></div>'
++'<div id="ipT-so"><div id="btnSov" onclick="ipi.sovCache.sovCapture();">New Sovereignty</div><div id="cacheInfo" style="float: right; display: inline-block; margin-left: 1em; opacity: 0.6;"></div><div id="so-c" style="font-size: 92%; line-height: 95%; overflow-x: hidden;"></div></div>'
++'<div id="ipT-mu" ><div id="btnMu" onclick="ip_mu();">Show Moving Units</div><span id="mu_context" style="margin-left:2em;"></span><div id="mu-c" style="font-size: 85%; word-wrap: none; overflow-x: hidden;"></div></div> <div id="ipT-re">Search for: <input type="text" size="11" id="ipT-ret" style="width: 8em;" title="Leave blank to search for all"/> <div id="btnRe" style="display: inline-block" onclick="ip_re();">Scan Map</div><span id="re_context" style="margin-left:2em;"></span><div id="re_c" style="font-size: 80%; word-wrap: none; overflow-x: hidden;"></div></div>'
++'</div></div>';$('#ipT-style').remove();if(!(this.localTest)){$("<link rel='stylesheet' type='text/css' id='ipT-style' href='https://Illypal.dewt.me.uk/illy_helper2.css'>").appendTo("head");}else{$("<link rel='stylesheet' type='text/css' id='ipT-style' href='https://Illypal.dewt.me.uk/illy_helper2.css'>").appendTo("head");}
+$(document.body).append(ui);this.dlgI=$('#illypal').dialog({resizable:1,draggable:true,width:'auto',height:'auto',minWidth:140,minHeight:96,maxWidth:1200,position:['right','top'],autoOpen:true,dialogClass:'alert'});$("#ipT").tabs();this.dlgI.dialog('widget').draggable('option',{cancel:'.ui-dialog-titlebar-close',handle:'.ui-tabs-nav'});$('#ui-dialog-title-illypal').parent().hide();$('.ui-dialog-titlebar').removeClass('ui-widget-header');$("#btnSov").button();$("#btnSov2").button();$("#btnMu").button();$("#btnRe").button();this.sizes={'Unknown':'(no information)','Few':'1&ndash;3','Handful':'4&ndash;8','Several':'9&ndash;21','Pack':'22&ndash;81','Many':'82&ndash;128','Gathering':'129&ndash;227','Horde':'228&ndash;462','Throng':'463&ndash;815','Host':'816&ndash;2,500','Legion':'2,501&ndash;9,999','Myriad':'10,000&ndash;24,999','Sea':'25,000&ndash;49,999','Cornucopia':'50,000 &ndash; Run Away!'};ip_close=function(){$('#illypal').dialog('close');}
+innerPopupify(null,'#ipT-ab');this.tradeHubs=[['Centrum',0,0,1,15,1],['Ellesmere',441,101,74,14,85],['Ignis',242,-251,9,21,87],['Grovinton',-145,174,23,13,34],['Tewhirria',312,575,48,6,52],['Persiflage',271,392,65,9,50],['Riverpass',-639,64,13,17,27],['Etilan',-615,-138,32,19,31],['The Barracks',544,466,63,6,51],['Swiftstead',448,561,48,6,53],['Aeris',109,-340,9,21,89],['Clegerick',-401,-177,76,18,103],['NewHarbour',664,-817,17,33,123]];cp='<table id="ip-th" class="oddeven"><tr><th class="left">Hub Name<th class="left">Actions on Location</tr>';var
+po,tt,inf='<span class="inb">#</span>';for(po in this.tradeHubs){tt=this.tradeHubs[po];if((tt[0]!=null)&&(po!=-1)){cp+='<tr><td><span class="name">[@h='+tt[0]+'|'+tt[1]+'|'+tt[2]+'|'+tt[3]+']</a><td><span class="name">[@l='+tt[1]+'|'+tt[2]+'|'+tt[4]+']</span><td><a href="https://elgea.illyriad.co.uk/#/Trade/HubInventory?HubId='+tt[5]+'&Subtype=0">Inv</a><td><a href="https://elgea.illyriad.co.uk/#/Trade/HubOrders?HubId='+tt[5]+'&Subtype=0">Orders</a></tr>';}}
+cp+='</table>';$('#ipT-th').html(cp);innerPopupify(null,'#ipT-th');this.ip_sovBuildings=[['LogC',FullImgePath('icons/wood.png'),'w'],['Eart',FullImgePath('icons/clay.png'),'c'],['Mine',FullImgePath('icons/iron.png'),'i'],['GraP',FullImgePath('icons/stone.png'),'s'],['Farm',FullImgePath('icons/food.png'),'f'],['Fish',FullImgePath('icons/food.png'),''],['Farr',FullImgePath('icons/horses_48.png'),''],['CatR',FullImgePath('icons/livestock_48.png'),''],['BreY',FullImgePath('icons/beer_48.png'),''],['Pape',FullImgePath('icons/books_48.png'),''],['Pole',FullImgePath('icons/spears_48.png'),''],['Blad',FullImgePath('icons/swords_48.png'),''],['Bowy',FullImgePath('icons/bows_48.png'),''],['Brid',FullImgePath('icons/saddles_48.png'),''],['Rend',FullImgePath('icons/leather_48.png'),''],['Armo',FullImgePath('icons/chainmail_48.png'),''],['PlaF',FullImgePath('icons/plate_48.png'),''],['EngY',FullImgePath('icons/siege_48.png'),''],['TraG','https://cdn9.illyriad.com/img/icons/military/human_spearunit_48.png',''],['TarR','https://cdn9.illyriad.com/img/icons/military/human_ranged_48.png','Raun'],['MilA','https://cdn9.illyriad.com/img/icons/military/human_infantry_48.png','Infu'],['JouY','https://cdn9.illyriad.com/img/icons/military/human_cavalry_48.png',''],['AssY','https://cdn9.illyriad.com/img/icons/siege/catapult_48.png',''],['FinS','https://cdn9.illyriad.com/img/icons/diplomatic/human_thief_48.png','']];this.buildingIcon=function(shortName,searchCol){var found=null;var i=0;while((found==null)&&(i<this.ip_sovBuildings.length)){if(this.ip_sovBuildings[i][searchCol]==shortName){found=i;}
+i++;}
+if(found!=null){return this.ip_sovBuildings[found][1];}else{return'';}}
+SovBufferItem={town_id:'',x:NaN,y:NaN,dateTime:null,claimRising:false,claimFalling:false,buildRising:false,buildFalling:false}
+SovCache=function(){this.mapZoomLimt=10;this.sovSquares={};this.display={};this.tidy=function(){}
+this.add=function(parsed){var thisId='';var sovItem;for(key in parsed){r=parsed[key];thisId=r.y+'|'+r.x;sovItem=this.sovSquares[thisId];if(sovItem==null){sovItem=jQuery.extend({},SovBufferItem);}
+if(sovItem!=null){sovItem.x=r.x;sovItem.y=r.y;sovItem.dateTime=Date.now();if(r.claim_status!=undefined){sovItem.claimRising=(r.claim_status=='R');}
+if(r.claim_status!=undefined){sovItem.claimFalling=(r.claim_status=='F');}
+if(r.build_activity!=undefined){sovItem.buildRising=(r.build_activity=='+');}
+if(r.build_activity!=undefined){sovItem.buildFalling=(r.build_activity=='-');}
+if(r.claim_level!=undefined){sovItem.claimLevelPC=r.claim_level;}
+if(r.distance!=undefined){sovItem.distance=r.distance;}
+if(r.gold_cost!=undefined){sovItem.costGold=r.gold_cost;}
+if(r.research_cost!=undefined){sovItem.costResearch=r.research_cost;}
+if(r.sov_id!=undefined){sovItem.sovId=r.sov_id;}
+if(r.sov_Level!=undefined){sovItem.sovLevel=r.sov_Level;}
+if(r.self_owned!=undefined){sovItem.selfOwned=r.self_owned;}
+if(r.owner_town_id!=undefined){sovItem.ownerTown=r.owner_town_id;}
+if(r.rs!=undefined){sovItem.resUnits=r.rs;}
+if(r.t!=undefined){sovItem.townName=r.t;}
+if(r.townImg!=undefined){sovItem.townImg=r.townImg;}
+if(r.sovBonusPC!=undefined){sovItem.sovBonusPC=r.sovBonusPC;}
+if(r.sovBonusRes!=undefined){sovItem.sovBonusRes=r.sovBonusRes;}
+if(r.sovBonusBuilding!=undefined){sovItem.sovBonusBuilding=r.sovBonusBuilding;}
+if(r.diploStance!=undefined){sovItem.diploStance=r.diploStance;}
+if(r.claimLevel!=undefined){sovItem.claimLevel=r.claimLevel;}
+if(r.buildLevel!=undefined){sovItem.buildLevel=r.buildLevel;}
+if(r.buildingName!=undefined){sovItem.buildingName=r.buildingName;}}
+this.sovSquares[thisId]=sovItem;}}
+this.sovDisplay=function(){var cp=mapWarn;if(typeof(this.display)=='undefined'){}else if(this.display.cx==undefined){}else{var cacheCount=0;for(key in ipi.sovCache.sovSquares){if(key.indexOf('|')>-1){cacheCount++}};var
+cp='<h3>Sovereignty, '+this.display.cx+'|'+this.display.cy+' (&plusmn;'+this.display.zoom+'), '+$('#serverDate').html()+'</h3><table class="sov1">',resKey=['w','c','i','s','f'],offMap,town,sid,res,resPre,resPost,resShow,sqBonus,tdc,ownership,p;$('#cacheInfo').html('Cache: <span id="cacheCount">'+cacheCount+'</span> <div id="ip_clearCache" onclick="ipi.sovCache.sovSquares=[]; $(\'#cacheCount\').html(\'0\');">Clear</div>');$("#ip_clearCache").button();var px,py;for(py=this.display.y2+1;py>=this.display.y1;py--){cp+='<tr>';for(px=this.display.x1;px<=this.display.x2;px++){if(py>this.display.y2){cp+='<th>'+px;}else{sid=py+'|'+px;sq=this.sovSquares[sid];resShow='';offmap=((px<-1000)||(px>1000)||(py<-3300)||(py>1000));if(!offmap){if(sq.resUnits!=undefined){res=sq.resUnits.split('|');for(i=0;i<5;i++){sqBonus=parseInt(res[i]);if(sqBonus>5){resPre='<div class="ip_inSqBonusBox" style="'
++'background-size: '+(sqBonus*3+37)+'%; '
++'background-image: url('+"'"+ipi.buildingIcon('wcisf'[i],2)+"'"+');"'+';">'
++'<div class="ip_inSqBonusInfo'+((sqBonus>15)?' ip_bigBonus':'')+'" style="color: rgb(0,'+(160-(21-sqBonus)*8)+',0);">';resPost='</div></div>';resShow+=resPre+res[i]+resPost;}}}}
+if(sq.sovBonusPC>0){p=sq.sovBonusRes.indexOf(' ');resShow+=(parseInt(sq.sovBonusPC)+5)+'%&nbsp;'+(sq.sovBonusRes.substr(0,(p<0)?3:2)+((p<0)?'':('.'+sq.sovBonusRes.substr(p+1,2))));}
+tdc='';if(sq!=undefined){if(this.sovSquares[py+'|'+(px-1)]!=undefined){if((px>this.display.x1)&&(sq.townName!=this.sovSquares[py+'|'+(px-1)].townName)){tdc+=' sl ';}}
+if(this.sovSquares[py+'|'+(px+1)]!=undefined){if((px<this.display.x2)&&(sq.townName!=this.sovSquares[py+'|'+(px+1)].townName)){tdc+=' sr ';}}
+if(this.sovSquares[(py-1)+'|'+px]!=undefined){if((py>this.display.y1)&&(sq.townName!=this.sovSquares[(py-1)+'|'+px].townName)){tdc+=' sb ';}}
+if(this.sovSquares[(py+1)+'|'+px]!=undefined){if((py<this.display.y2)&&(sq.townName!=this.sovSquares[(py+1)+'|'+px].townName)){tdc+=' st ';}}}
+if(sq.townImg!=''){cp+='<td class="ip_sbTown ip_Owned_'+sq.diploStance+tdc+'"><img src="https://cdn9.illyriad.com/img/'+sq.townImg+'" style="width: 32px; height: 32px;"></td>';}else if(sq.townName!=''){if(sq.diploStance=='Yours'){p=sq.buildingName.indexOf(' ');building_name_short=(sq.buildLevel>=0)?(sq.buildingName.substr(0,(p<0)?4:3)+((p<0)?'':sq.buildingName.substr(p+1,1))):'  = ';cp+='<td';if(offmap){cp+=' class="offmap"';}else if(sq.buildLevel>=0){cp+=' class="ip_sb_'+building_name_short+' ip_Owned_'+sq.diploStance+tdc+'"';}
+cp+='>';cp+='<div class="ip_gridLayer" style="z-index: 5;"><div class="ip_inResPic">';if(building_name_short!=''){cp+='<img src="'+ipi.buildingIcon(building_name_short,0)+'">';}
+cp+='</div></div>';cp+='<div class="ip_gridLayer" style="z-index: 7;"><div class="ip_inLevels">';if((sq.claimLevel)>(sq.buildLevel+(sq.buildRising?1:0)+(sq.buildFalling?-1:0))){cp+='<span class="underdeveloped" title="Under-developed">';}
+cp+='<span class="'+(sq.buildRising?'buildRising ':'')+(sq.buildFalling?'buildFalling ':'')
++'">'+sq.buildLevel+'</span>'
++'/<span class="'+(sq.claimRising?'claimRising ':'')+(sq.claimFalling?'claimFalling ':'')
++'">'+sq.claimLevel+'</span>';if(sq.claimLevel>sq.buildLevel){cp+='</span>';}
+cp+='</div></div>';cp+='<div class="ip_gridLayer" style="z-index: 8;"><div class="ip_inStats">'+resShow+'</div></div>';}else{cp+='<td class="'+'c ip_Owned_'+sq.diploStance+tdc+'"><div class="ip_sbOtherOwned_Name">'+sq.townName.substr(0,18)+'</div><div class="ip_sbOtherOwned_Level">'+sq.claimLevel+'</div></td>';}}else{cp+='<td';if(offmap){cp+=' class="offmap"';}
+cp+='>';cp+='<div class="ip_gridLayer" style="z-index: 7;"><div class="ip_sbBlank">'+((resShow=='')?'&ndash;':resShow)+'</div></div>';}}
+if(py>this.display.y2){cp+='</th>';}else{cp+='</td>';}}
+if(py<=this.display.y2){cp+='<th>'+py+'</th>';}
+cp+="</tr>";}
+cp+='</table>';}
+$('#so-c').html(cp);}
+this.sovCapture=function(){this.add(ipi.sovCache.parseList());this.add(ipi.sovCache.parseMap());this.sovDisplay();}
+this.parseList=function(){var sovInners=[];var sovHeads=[];var ba;jQuery.each($('#sovAccordion').children('.ui-accordion-content').children('.generic'),function(key,value){var s;if($(value.rows[20].cells[0]).html().trim().substr(0,2)=='No'){ba='0';}else{if($(value.rows[19].cells[0].children[0].children[0].children[0].children[0]).html().trim().substr(0,2)=='Bu'){ba='+';}else{ba='-';}}
+s={fromList:true,claim_level:$(value.rows[4].cells[2]).html().match(/\(([^\)]+)\)/)[1],claim_status:$(value.rows[4].cells[3]).html().trim()[0],distance:$(value.rows[12].cells[1]).html().match(/x (.*)/)[1]-0.0,gold_cost:$(value.rows[13].cells[3]).html().match(/<b>= ([^<]+)<\/b>/)[1]-0,research_cost:$(value.rows[13].cells[1]).html().match(/<b>= ([^<]+)<\/b>/)[1]-0,sov_id:$("input[name=SovereigntyID]",$($(value.rows[19].cells[0])[0])).val(),sov_level:$(value.rows[11].cells[1]).html().match(/x (.*)/)[1]-0,build_activity:ba,self_owned:true,owner_town_id:CurrentTown}
+sovInners.push(s);});jQuery.each($('#sovAccordion').children('.ui-accordion-header').children('a'),function(key,value){var s;s=$(value.children[0]).html().trim().substr(-11);s=s.substr(s.lastIndexOf('at ')+3).split('|');sovHeads.push({x:s[0],y:s[1]});});for(var i=0;i<sovInners.length;i++){sovInners[i].x=sovHeads[i].x;sovInners[i].y=sovHeads[i].y;}
+return sovInners;}
+this.parseMap=function(){var mapShown=false;if(typeof(mapData)!='undefined'){if(mapData!=null){mapShown=true;}}
+var sov=[];if(mapShown){var mz=Math.min(this.mapZoomLimit,mapData.zoom);this.display={cx:mapData.x,cy:mapData.y,zoom:mapData.zoom,x1:mapData.x-mapData.zoom,y1:mapData.y-mapData.zoom,x2:mapData.x+mapData.zoom,y2:mapData.y+mapData.zoom,x1s:mapData.x-mapData.zoom,y1s:mapData.y-mapData.zoom,x2s:mapData.x+mapData.zoom,y2s:mapData.y+mapData.zoom,}
+var sid='';var offmap;var s;var res;var sovBonusDesc;var p;var town,sq;for(py=this.display.y2;py>=this.display.y1;py--){for(px=this.display.x1;px<=this.display.x2;px++){offmap=((px<-1000)||(px>1000)||(py<-3300)||(py>1000));sid=py+'|'+px;town=mapData.t[sid];sq=mapData.s[sid];if(!offmap){s={};s.x=px;s.y=py;s.rs=mapData.data[sid].rs;if(sq!=null){s.t=sq.t;}else{s.t='';}
+sovBonusDesc=trans(dGVycmFpbg[mapData.data[sid].i].sb);if(sovBonusDesc[0]=='+'){s.sovBonusPC=sovBonusDesc[1];s.sovBonusRes=sovBonusDesc.substr(4,sovBonusDesc.indexOf('prod')-5);s.sovBonusBuilding=sovBonusDesc.substr(sovBonusDesc.indexOf('per level')+13);}else{s.sovBonusPC=0;s.sovBonusRes=s.sovBonusBuilding='';}
+s.diploStance='';s.claimLevel='';s.buildLevel='';s.buildingName='';s.townImg='';if(town!=null){s.diploStance=(town.rd==undefined)?'':town.rd.trim();s.townImg=town.img+'.png';}
+if(sq!=null){s.diploStance=(sq.rd==undefined)?'':sq.rd.trim();s.claimLevel=sq.sl;s.buildLevel=sq.ss;s.buildingName=sq.b;}
+sov.push(s);}}}}
+return sov;}}
+this.sovCache=new SovCache;ip_mu=function(){$('#mu_context').html('');var cp='';if(typeof(mapData)=='undefined'){cp=mapWarn;}else if(mapData==null){cp=mapWarn;}else{var
+m=mapData.mu,mt=mapData.mt,ONE_DAY=(24*60*60*1000),dNowS=$('#serverDate').html(),tNowD=(dNowS.substr(11,2)/24+dNowS.substr(14,2)/(24*60)+dNowS.substr(17,2)/(24*3600)),tBeginD=3/(24*60),s='',a='',d,fl,sx,sy,distx,disty,dist,dt,spd,eta,sqd,showETA,sqdir,clo,shown=false;$('#mu_context').html(ipi.contextHeader('Moving Units',null));cp+='<table id="ip-mu" class="oddeven"><tr><th class="ac">Position</th><th class="al">Stance</th><th class="al">Size</th><th class="al">Description</th><th class="ar">Speed</th><th class="al">Direction (clock)</th></tr>';for(l in m){shown=true;fl=mapData.mu[l];sx=fl.dx-fl.cx;sy=fl.dy-fl.cy;distx=mapData.x-fl.dx;disty=mapData.y-fl.dy;dist=Math.sqrt(distx*distx+disty*disty);dt=(fl.ed-fl.sd)/(ONE_DAY);spd=(Math.sqrt(sx*sx+sy*sy))/(dt*24);eta=(dist/spd)*60;sqdir=((Math.round(Math.atan2(distx,disty)*6/Math.PI)+11)%12)+1;clo=((Math.round(Math.atan2(sx,sy)*6/Math.PI)+11)%12)+1;showETA=(Math.abs(sqdir-clo)<=2)||(Math.abs(sqdir-clo)>=11);cp+='<tr><td>'+fl.cx.toFixed(0)+'|'+fl.cy.toFixed(0)+'</td><td>'+fl.rd+'</td><td><span title="'+fl.n+': '+ipi.sizes[fl.n]+'">'+fl.n+'</span></td><td>'+fl.d+'</td><td>'+spd.toFixed(1)+'</td><td>'+clo.toFixed(0)+(showETA?' incoming '+eta.toFixed(0)+'m':'')+'</td></tr>';}
+if(!shown){cp+='<tr><td colspan="8">(No moving units)</td></tr>';}
+cp+='</table>';}
+$('#mu-c').html(cp);}
+ip_re=function(){$('#re_context').html('');var cp='';if(typeof(mapData)=='undefined'){cp=mapWarn;}else if(mapData==null){cp=mapWarn;}else{var fl,l,mx=mapData.x,my=mapData.y,mz=mapData.zoom,p=$("#ipT-ret").val().toLowerCase();t='',reg=null,na=['Hides','Basic herbs','Basic minerals','Equipment','Salts','Rare herbs','Rare minerals','Grapes','Animal parts'],it=[];$('#re_context').html(ipi.contextHeader('Harvestables',null));for(l in mapData.d){fl=mapData.d[l].split('|');co=l.split('|');reg=(mapData.data[l]==null)?-1:mapData.data[l].r;for(i=0;i<=8;i++){if((fl[i]=='1')&&(na[i].toLowerCase().search(p)!=-1)){it.push({y:co[0],x:co[1],item:na[i],region:reg});}}}
+for(l in mapData.n){fl=mapData.n[l];co=l.split('|');reg=(mapData.data[l]==null)?-1:mapData.data[l].r;if((fl.d.toLowerCase().search(p)!=-1)){it.push({y:co[0],x:co[1],item:fl.d,region:reg});}}
+it.sort(function(a,b){if(a.item==b.item){if(a.y==b.y){if(a.x==b.x){r=0;}else{r=(a.x-b.x);}}else{r=(a.y-b.y);}}else{r=(a.item<b.item)?-1:1;}
+return r;});for(i in it){if(it[i].item!=undefined){if(t!=it[i].item){t=it[i].item;cp+='<div style="margin-top: 4px;"><b>'+t+'</b></div>';}
+cp+='<span style="margin-left: 2em;" class="name">[@l='+it[i].x+'|'+it[i].y+'|'+it[i].region+']</span>'+lf;}}
+if(it.length==0){cp+='(none found)';}}
+$('#re_c').html(cp);innerPopupify(null,'#re_c');}};ipi=new ip;
